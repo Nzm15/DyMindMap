@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cybersecurity Mind Map</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+        }
+        .node circle {
+            stroke: #b0bec5;
+            stroke-width: 2px;
+            cursor: pointer;
+            fill: white;
+            transition: all 0.3s ease;
+        }
+        .node text {
+            font-size: 12px;
+            fill: #424242;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+            transition: fill 0.3s ease;
+        }
+        .node.center-node circle {
+            fill: #007bff;
+            stroke: #007bff;
+        }
+        .node.center-node text {
+            font-size: 16px;
+            font-weight: bold;
+            fill: white;
+        }
+        .link {
+            stroke: #e0e0e0;
+            stroke-opacity: 0.8;
+            stroke-width: 2px;
+            fill: none;
+            transition: stroke-color 0.3s ease;
+        }
+        svg {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+        }
+        svg:active {
+            cursor: grabbing;
+        }
+        #zoom-controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 10;
+        }
+        #zoom-in, #zoom-out {
+            padding: 10px 14px;
+            border: none;
+            border-radius: 4px;
+            background-color: #e0e0e0;
+            cursor: pointer;
+            user-select: none;
+            font-size: 18px;
+            color: #424242;
+            transition: background-color 0.3s ease, color 0.3s ease;
+        }
+        #zoom-in:hover, #zoom-out:hover {
+            background-color: #007bff;
+            color: white;
+        }
+        #zoom-in:active, #zoom-out:active {
+            background-color: #0056b3;
+        }
+        .node:hover circle {
+            stroke: #007bff;
+            stroke-width: 4px;
+            transform: scale(1.1);
+        }
+        .node:hover text {
+            fill: #007bff;
+            font-weight: bold;
+        }
+        .link:hover {
+            stroke: #007bff;
+            stroke-width: 3px;
+        }
+        @keyframes pulse {
+          0% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+          100% { transform: scale(1); }
+        }
+        .node.center-node circle {
+            animation: pulse 2s infinite;
+        }
+    </style>
+</head>
+<body>
+    <div id="zoom-controls">
+        <button id="zoom-in">+</button>
+        <button id="zoom-out">-</button>
+    </div>
+    <svg></svg>
+    <script>
+        const svg = d3.select("svg")
+            .attr("width", window.innerWidth)
+            .attr("height", window.innerHeight);
+
+        const mindMapGroup = svg.append("g")
+            .attr("transform", "translate(0,0)");
+
+        let zoomTransform = d3.zoomIdentity;
+        const zoom = d3.zoom()
+            .scaleExtent([0.5, 3])
+            .on("zoom", zoomed);
+
+        svg.call(zoom);
+
+        function zoomed() {
+            zoomTransform = d3.event.transform;
+            mindMapGroup.attr("transform", zoomTransform);
+        }
+
+        const zoomInButton = d3.select("#zoom-in")
+            .on("click", () => {
+                zoomTransform.k = Math.min(3, zoomTransform.k + 0.2);
+                svg.call(zoom.transform, zoomTransform);
+            });
+
+        const zoomOutButton = d3.select("#zoom-out")
+            .on("click", () => {
+                zoomTransform.k = Math.max(0.5, zoomTransform.k - 0.2);
+                svg.call(zoom.transform, zoomTransform);
+            });
+
+        const data = {
+            "nodes": [
+                { "id": "cybersecurity", "label": "Cybersecurity", "color": "#007bff", "isCenter": true },
+                { "id": "networkSecurity", "label": "Network Security", "color": "#4dabf5", "parent": "cybersecurity" },
+                { "id": "firewalls", "label": "Firewalls", "color": "#ffffff", "parent": "networkSecurity" },
+                { "id": "idps", "label": "IDPS", "color": "#ffffff", "parent": "networkSecurity" },
+                { "id": "vpn", "label": "VPNs", "color": "#ffffff", "parent": "networkSecurity" },
+                { "id": "segmentation", "label": "Segmentation", "color": "#ffffff", "parent": "networkSecurity" },
+                { "id": "wirelessSecurity", "label": "Wireless Security", "color": "#ffffff", "parent": "networkSecurity" },
+                { "id": "dataSecurity", "label": "Data Security", "color": "#4dabf5", "parent": "cybersecurity" },
+                { "id": "encryption", "label": "Encryption", "color": "#ffffff", "parent": "dataSecurity" },
+                { "id": "accessControl", "label": "Access Control", "color": "#ffffff", "parent": "dataSecurity" },
+                { "id": "dlp", "label": "DLP", "color": "#ffffff", "parent": "dataSecurity" },
+                { "id": "databaseSecurity", "label": "Database Security", "color": "#ffffff", "parent": "dataSecurity" },
+                { "id": "backupRecovery", "label": "Backup/Recovery", "color": "#ffffff", "parent": "dataSecurity" },
+                { "id": "applicationSecurity", "label": "Application Security", "color": "#4dabf5", "parent": "cybersecurity" },
+                { "id": "secureCoding", "label": "Secure Coding", "color": "#ffffff", "parent": "applicationSecurity" },
+                { "id": "waf", "label": "WAFs", "color": "#ffffff", "parent": "applicationSecurity" },
+                { "id": "apiSecurity", "label": "API Security", "color": "#ffffff", "parent": "applicationSecurity" },
+                { "id": "softwareTesting", "label": "Software Testing", "color": "#ffffff", "parent": "applicationSecurity" },
+                { "id": "dependencyManagement", "label": "Dependency Mgmt", "color": "#ffffff", "parent": "applicationSecurity" },
+                { "id": "incidentResponse", "label": "Incident Response", "color": "#4dabf5", "parent": "cybersecurity" },
+                { "id": "detection", "label": "Detection", "color": "#ffffff", "parent": "incidentResponse" },
+                { "id": "containment", "label": "Containment", "color": "#ffffff", "parent": "incidentResponse" },
+                { "id": "recovery", "label": "Recovery", "color": "#ffffff", "parent": "incidentResponse" },
+                { "id": "analysis", "label": "Analysis", "color": "#ffffff", "parent": "incidentResponse" },
+                { "id": "communication", "label": "Communication", "color": "#ffffff", "parent": "incidentResponse" },
+                { "id": "riskManagement", "label": "Risk Management", "color": "#4dabf5", "parent": "cybersecurity" },
+                { "id": "riskAssessment", "label": "Risk Assessment", "color": "#ffffff", "parent": "riskManagement" },
+                { "id": "vulnerabilityMgmt", "label": "Vulnerability Mgmt", "color": "#ffffff", "parent": "riskManagement" },
+                { "id": "securityPolicies", "label": "Security Policies", "color": "#ffffff", "parent": "riskManagement" },
+                { "id": "compliance", "label": "Compliance", "color": "#ffffff", "parent": "riskManagement" },
+                { "id": "businessContinuity", "label": "Business Continuity", "color": "#ffffff", "parent": "riskManagement" },
+                { "id": "userAwareness", "label": "User Awareness", "color": "#4dabf5", "parent": "cybersecurity" },
+                { "id": "phishing", "label": "Phishing Training", "color": "#ffffff", "parent": "userAwareness" },
+                { "id": "passwordMgmt", "label": "Password Mgmt", "color": "#ffffff", "parent": "userAwareness" },
+                { "id": "socialEngineering", "label": "Social Eng. Awareness", "color": "#ffffff", "parent": "userAwareness" },
+                { "id": "browsing", "label": "Safe Browsing", "color": "#ffffff", "parent": "userAwareness" },
+                { "id": "dataHandling", "label": "Data Handling", "color": "#ffffff", "parent": "userAwareness" },
+            ],
+            "links": [
+                { "source": "cybersecurity", "target": "networkSecurity" },
+                { "source": "networkSecurity", "target": "firewalls" },
+                { "source": "networkSecurity", "target": "idps" },
+                { "source": "networkSecurity", "target": "vpn" },
+                { "source": "networkSecurity", "target": "segmentation" },
+                { "source": "networkSecurity", "target": "wirelessSecurity" },
+                { "source": "cybersecurity", "target": "dataSecurity" },
+                { "source": "dataSecurity", "target": "encryption" },
+                { "source": "dataSecurity", "target": "accessControl" },
+                { "source": "dataSecurity", "target": "dlp" },
+                { "source": "dataSecurity", "target": "databaseSecurity" },
+                { "source": "dataSecurity", "target": "backupRecovery" },
+                { "source": "cybersecurity", "target": "applicationSecurity" },
+                { "source": "applicationSecurity", "target": "secureCoding" },
+                { "source": "applicationSecurity", "target": "waf" },
+                { "source": "applicationSecurity", "target": "apiSecurity" },
+                { "source": "applicationSecurity", "target": "softwareTesting" },
+                { "source": "applicationSecurity", "target": "dependencyManagement" },
+                { "source": "cybersecurity", "target": "incidentResponse" },
+                { "source": "incidentResponse", "target": "detection" },
+                { "source": "incidentResponse", "target": "containment" },
+                { "source": "incidentResponse", "target": "recovery" },
+                { "source": "incidentResponse", "target": "analysis" },
+                { "source": "incidentResponse", "target": "communication" },
+                { "source": "cybersecurity", "target": "riskManagement" },
+                { "source": "riskManagement", "target": "riskAssessment" },
+                { "source": "riskManagement", "target": "vulnerabilityMgmt" },
+                { "source": "riskManagement", "target": "securityPolicies" },
+                { "source": "riskManagement", "target": "compliance" },
+                { "source": "riskManagement", "target": "businessContinuity" },
+                { "source": "cybersecurity", "target": "userAwareness" },
+                { "source": "userAwareness", "target": "phishing" },
+                { "source": "userAwareness", "target": "passwordMgmt" },
+                { "source": "userAwareness", "target": "socialEngineering" },
+                { "source": "userAwareness", "target": "browsing" },
+                { "source": "userAwareness", "target": "dataHandling" },
+            ],
+        };
+
+        const simulation = d3.forceSimulation(data.nodes)
+            .force("link", d3.forceLink(data.links).id((d) => d.id).distance(120))
+            .force("charge", d3.forceManyBody().strength(-150))
+            .force("center", d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2));
+
+        const link = mindMapGroup.append("g")
+            .attr("class", "links")
+            .selectAll("path")
+            .data(data.links)
+            .enter()
+            .append("path")
+            .attr("class", "link");
+
+        const node = mindMapGroup.append("g")
+            .attr("class", "nodes")
+            .selectAll("g")
+            .data(data.nodes)
+            .enter()
+            .append("g")
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended));
+
+        node.append("circle")
+            .attr("r", (d) => d.isCenter ? 50 : 30)
+            .attr("fill", (d) => d.color);
+
+            node.append("text")
+            .text((d) => d.label)
+            .attr("class", "label")
+            .style("font-size", (d) => d.isCenter ? "18px" : "12px")
+            .attr("text-anchor", "middle")  // Center text horizontally
+            .attr("dominant-baseline", "middle")  // Center text vertically
+            .attr("x", 0) // Ensures the text is positioned at the center horizontally
+            .attr("y", 0); // Ensures the text is positioned at the center vertically
+        
+
+        node.append("title").text((d) => d.label);
+
+        simulation.on("tick", () => {
+            link.attr("d", linkArc);
+            node.attr("transform", (d) => `translate(${d.x},${d.y})`);
+        });
+
+        function linkArc(d) {
+            const dx = d.target.x - d.source.x,
+                dy = d.target.y - d.source.y,
+                dr = Math.sqrt(dx * dx + dy * dy) / 2;
+            const sweep = (d.source.x > d.target.x) ? 0 : 1;
+            return "M" + d.source.x + "," + d.source.y + "A" + dr + "," + dr + " 0 0," + sweep + " " + d.target.x + "," + d.target.y;
+        }
+
+        function dragstarted(d) {
+            if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(d) {
+            d.fx = d3.event.x;
+            d.fy = d3.event.y;
+        }
+
+        function dragended(d) {
+            if (!d3.event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+
+        window.addEventListener("resize", () => {
+            svg.attr("width", window.innerWidth).attr("height", window.innerHeight);
+            simulation
+                .force("center", d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2))
+                .restart();
+        });
+    </script>
+</body>
+</html>
