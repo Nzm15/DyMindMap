@@ -1,0 +1,1186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Cybersecurity Mind Map</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <style>
+        /* Global Styles */
+        body {
+            margin: 0;
+             overflow: hidden;
+            font-family: 'Poppins', sans-serif; /* Modern font */
+            background: linear-gradient(135deg, #121212 0%, #1a1a2e 100%); /* Gradient background */
+            position: relative;
+        }
+        
+        /* Enhanced particle background effect */
+        body::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(#ffffff05 1px, transparent 1px), radial-gradient(#00b8d410 1.5px, transparent 1.5px);
+            background-size: 50px 50px, 70px 70px;
+            background-position: 0 0, 25px 25px;
+            z-index: -1;
+            opacity: 0.4;
+            animation: backgroundShift 120s linear infinite;
+        }
+        
+        @keyframes backgroundShift {
+            0% { background-position: 0 0, 25px 25px; }
+            100% { background-position: 1000px 1000px, 1025px 1025px; }
+        }
+
+        @font-face {
+            font-family: 'Poppins';
+            src: url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+        }
+
+        /* Enhanced Loading Screen */
+        #loading-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #121212 0%, #1a1a2e 100%);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            transition: opacity 1.2s cubic-bezier(0.65, 0, 0.35, 1);
+        }
+
+        #loading-screen.hidden {
+            opacity: 0;
+            visibility: hidden;
+        }
+
+        .loader {
+            border: 5px solid rgba(76, 175, 80, 0.2);
+            border-top: 5px solid #00B8D4; /* A brighter, more vibrant color */
+            border-radius: 50%;
+            width: 70px;
+            height: 70px;
+            animation: spin 1.5s cubic-bezier(0.68, -0.55, 0.27, 1.55) infinite;
+            box-shadow: 0 0 20px rgba(0, 184, 212, 0.5);
+            position: relative;
+        }
+        
+        /* Enhanced loader with inner glow */
+        .loader::after {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: -10px;
+            right: -10px;
+            bottom: -10px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(0, 184, 212, 0.3) 0%, rgba(0, 184, 212, 0) 70%);
+            animation: pulse-glow 2s ease-in-out infinite alternate;
+        }
+        
+        @keyframes pulse-glow {
+            0% { opacity: 0.3; transform: scale(0.9); }
+            100% { opacity: 0.7; transform: scale(1.1); }
+        }
+        
+        #loading-screen::after {
+            content: 'Loading Cybersecurity Mind Map...';
+            color: #00B8D4;
+            font-size: 18px;
+            font-weight: 500;
+            margin-top: 25px;
+            opacity: 0.9;
+            animation: fade-in 1.5s ease-in-out infinite alternate;
+            text-shadow: 0 0 10px rgba(0, 184, 212, 0.5);
+        }
+        
+        @keyframes fade-in {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* SVG Canvas */
+        svg {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+        }
+
+        svg:active {
+            cursor: grabbing;
+        }
+
+        /* Enhanced Node Styling */
+        .node circle {
+            stroke: #4A5568; /* Default stroke color */
+            stroke-width: 3px;
+            cursor: pointer;
+            fill: rgba(31, 31, 31, 0.85); /* Base fill for non-gradient browsers */
+            fill-opacity: 0.95;
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Improved transition with bounce effect */
+            filter: drop-shadow(0 0 8px rgba(0, 0, 0, 0.7));
+            backdrop-filter: blur(5px); /* Glass morphism effect */
+            /* Enhanced 3D effect with inset shadow */
+            box-shadow: inset 0 0 15px rgba(255, 255, 255, 0.1), 0 4px 12px rgba(0, 0, 0, 0.6);
+        }
+        
+        /* Enhanced node shapes with smoother animations */
+        .node.level-1 circle {
+            clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%); /* Hexagon shape */
+            transform: scale(1.1);
+            animation: subtle-rotate 20s linear infinite;
+        }
+        
+        @keyframes subtle-rotate {
+            0% { transform: scale(1.1) rotate(0deg); }
+            100% { transform: scale(1.1) rotate(360deg); }
+        }
+        
+        .node.level-2 circle {
+            clip-path: polygon(50% 0%, 100% 38%, 82% 100%, 18% 100%, 0% 38%); /* Pentagon shape */
+            animation: subtle-pulse 4s ease-in-out infinite alternate;
+        }
+        
+        @keyframes subtle-pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.05); }
+        }
+        
+        /* Enhanced highlighted node styling with particle effects */
+        .node.highlighted circle {
+            stroke: #00B8D4;
+            stroke-width: 4px;
+            fill: rgba(42, 42, 42, 0.9); /* Semi-transparent fill for glass effect */
+            filter: drop-shadow(0 0 15px #00B8D4);
+            transform: scale(1.05); /* Slightly larger when highlighted */
+            animation: highlight-pulse 2s infinite alternate;
+            position: relative;
+        }
+        
+        /* Particle effect for highlighted nodes */
+        .node.highlighted::after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background-image: radial-gradient(circle, rgba(0, 184, 212, 0.8) 0%, rgba(0, 184, 212, 0) 70%);
+            border-radius: 50%;
+            filter: blur(10px);
+            animation: particle-pulse 3s ease-in-out infinite alternate;
+            pointer-events: none;
+        }
+        
+        @keyframes particle-pulse {
+            0% { opacity: 0.3; transform: scale(0.9); }
+            100% { opacity: 0.7; transform: scale(1.2); }
+        }
+        
+        @keyframes highlight-pulse {
+            0% { filter: drop-shadow(0 0 10px #00B8D4); }
+            100% { filter: drop-shadow(0 0 25px #00B8D4); }
+        }
+        
+        .node.highlighted text {
+            fill: #00B8D4;
+            font-weight: 600;
+            text-shadow: 0 0 8px rgba(0, 184, 212, 0.7); /* Enhanced text glow effect */
+            animation: text-glow 2s infinite alternate;
+        }
+        
+        @keyframes text-glow {
+            0% { text-shadow: 0 0 5px rgba(0, 184, 212, 0.5); }
+            100% { text-shadow: 0 0 12px rgba(0, 184, 212, 0.9); }
+        }
+
+        /* Enhanced path highlight effect */
+        .link {
+            stroke: #4A5568; /* Darker, more subtle link color */
+            stroke-opacity: 0.7; /* Slightly more visible links */
+            stroke-width: 2.5px;
+            fill: none;
+            stroke-dasharray: 5, 3; /* Dashed line effect for normal links */
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Smoother transition with bounce effect */
+            filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.3));
+        }
+        
+        /* Enhanced link highlight with animated flow effect */
+        .link.highlighted {
+            stroke: #00B8D4;
+            stroke-width: 4px;
+            stroke-opacity: 0.9;
+            filter: drop-shadow(0 0 10px #00B8D4);
+            animation: pulse-link 2s infinite alternate, flow-animation 30s linear infinite;
+            stroke-dasharray: 10, 10; /* Animated dash pattern */
+            transition: stroke-dasharray 0.5s ease;
+        }
+        
+        @keyframes flow-animation {
+            0% { stroke-dashoffset: 0; }
+            100% { stroke-dashoffset: 1000; }
+        }
+        
+        @keyframes pulse-link {
+            0% { filter: drop-shadow(0 0 5px #00B8D4); stroke-opacity: 0.7; }
+            100% { filter: drop-shadow(0 0 18px #00B8D4); stroke-opacity: 1; }
+        }
+
+        .node.blurred circle,
+        .node.blurred text {
+            filter: blur(2px);
+            opacity: 0.5;
+            transition: all 0.5s ease;
+        }
+
+        .link.blurred {
+            filter: blur(2px);
+            opacity: 0.3;
+            transition: all 0.5s ease;
+        }
+
+        /* Enhanced hover effects with 3D transformation */
+        .node:hover circle {
+            stroke: #00B8D4; /* Highlight with the vibrant color on hover */
+            stroke-width: 3px;
+            filter: drop-shadow(0 0 18px #00B8D4); /* More pronounced glow */
+            transform: scale(1.15) translateZ(10px);
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1); /* Bouncy animation effect */
+            box-shadow: 0 0 15px rgba(0, 184, 212, 0.7), inset 0 0 20px rgba(255, 255, 255, 0.2);
+        }
+
+        .node text {
+            font-size: 14px;
+            fill: #EEEEEE; /* Off-white, for better contrast on dark background */
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+            white-space: pre-wrap;
+            word-break: break-word;
+            transition: all 0.3s ease;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5); /* Text shadow for better readability */
+        }
+
+        .node:hover text {
+            fill: #00B8D4; /* Change text color on hover */
+            font-weight: 500; /* Make text slightly bolder on hover */
+            transform: scale(1.05); /* Slightly scale up text on hover */
+            text-shadow: 0 0 8px rgba(0, 184, 212, 0.6); /* Text glow on hover */
+        }
+
+        /* Enhanced Center Node (Cybersecurity) with 3D effect */
+        .node.center-node circle {
+            fill: #00B8D4; /* Vibrant center node color */
+            stroke: #00B8D4;
+            animation: pulse 3s infinite; /* Slower, more subtle pulse */
+            filter: drop-shadow(0 0 25px rgba(0, 184, 212, 0.8)); /* Enhanced glow */
+            background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.3), transparent); /* Light reflection effect */
+            position: relative;
+        }
+        
+        /* Add particle orbit effect to center node */
+        .node.center-node::before, .node.center-node::after {
+            content: '';
+            position: absolute;
+            border-radius: 50%;
+            background: rgba(0, 184, 212, 0.5);
+            filter: blur(5px);
+            pointer-events: none;
+        }
+        
+        .node.center-node::before {
+            width: 15px;
+            height: 15px;
+            animation: orbit 8s linear infinite;
+        }
+        
+        .node.center-node::after {
+            width: 10px;
+            height: 10px;
+            animation: orbit 12s linear infinite reverse;
+        }
+        
+        @keyframes orbit {
+            0% { transform: rotate(0deg) translateX(100px) rotate(0deg); }
+            100% { transform: rotate(360deg) translateX(100px) rotate(-360deg); }
+        }
+
+        .node.center-node text {
+            font-size: 24px; /* Larger font size for the center */
+            font-weight: 700; /* Stronger font weight for the center */
+            fill: #FFFFFF; /* White text color for better contrast */
+            text-shadow: 0 0 10px rgba(0, 184, 212, 0.7); /* Enhanced text glow */
+            animation: text-pulse 3s infinite alternate; /* Subtle text animation */
+        }
+        
+        /* Enhanced node styling based on level with gradient effects */
+        .node circle {
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Smoother transition with bounce effect */
+        }
+        
+        .node.level-1 circle {
+            fill: rgba(42, 42, 42, 0.9);
+            stroke: #81D4FA;
+            stroke-width: 3.5px;
+            filter: drop-shadow(0 0 10px rgba(129, 212, 250, 0.5));
+        }
+        
+        .node.level-2 circle {
+            fill: rgba(36, 36, 36, 0.85);
+            stroke: #FFFFFF;
+            stroke-width: 2.5px;
+        }
+
+        @keyframes text-pulse {
+            0% { text-shadow: 0 0 5px rgba(0, 184, 212, 0.3); }
+            100% { text-shadow: 0 0 15px rgba(0, 184, 212, 0.7); }
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(0, 184, 212, 0.6)); }
+            50% { transform: scale(1.08); filter: drop-shadow(0 0 30px rgba(0, 184, 212, 0.9)); } /* Increased glow intensity */
+            100% { transform: scale(1); filter: drop-shadow(0 0 20px rgba(0, 184, 212, 0.6)); }
+        }
+
+        /* Enhanced Links (Lines) with animated styling */
+        .link {
+            stroke: #4A5568; /* Darker, more subtle link color */
+            stroke-opacity: 0.7; /* Slightly more visible links */
+            stroke-width: 2.5px;
+            fill: none;
+            stroke-dasharray: 5, 3; /* Dashed line effect for normal links */
+            transition: all 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Smoother transition with bounce effect */
+            filter: drop-shadow(0 0 2px rgba(0, 0, 0, 0.3));
+        }
+        
+        /* Different link styles based on connection level with animated effects */
+        .link.level-1 {
+            stroke: #81D4FA;
+            stroke-opacity: 0.8;
+            stroke-width: 3px;
+            stroke-dasharray: 7, 3; /* Different dash pattern for level 1 links */
+            animation: dash-animation 30s linear infinite;
+        }
+        
+        @keyframes dash-animation {
+            to { stroke-dashoffset: 1000; }
+        }
+        
+        .link.level-2 {
+            stroke: #4A5568;
+            stroke-opacity: 0.6;
+            stroke-width: 2px;
+            stroke-dasharray: 4, 2; /* Smaller dash pattern for level 2 links */
+            animation: dash-animation 40s linear infinite reverse;
+        }
+
+        .link:hover {
+            stroke: #00B8D4; /* Highlight links on hover */
+            stroke-width: 3px;
+            stroke-opacity: 0.9; /* Slightly less transparent on hover */
+            stroke-dasharray: 5, 2; /* Slightly different dash pattern on hover */
+            filter: drop-shadow(0 0 3px rgba(0, 184, 212, 0.5)); /* Subtle glow on hover */
+        }
+
+        /* Enhanced Zoom Controls with 3D effect */
+        #zoom-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        #zoom-in, #zoom-out {
+            padding: 14px 18px;
+            border: none;
+            border-radius: 50%; /* Circular buttons */
+            background-color: rgba(45, 55, 72, 0.8); /* Semi-transparent background */
+            cursor: pointer;
+            user-select: none;
+            font-size: 22px; /* Larger font size for buttons */
+            color: #EEEEEE; /* Off-white text color */
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Bouncy transition */
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4), inset 0 0 10px rgba(255, 255, 255, 0.1); /* Enhanced 3D button shadow */
+            width: 50px;
+            height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(4px); /* Glass effect */
+            border: 1px solid rgba(255, 255, 255, 0.1); /* Subtle border */
+        }
+
+        #zoom-in:hover, #zoom-out:hover {
+            background-color: #00B8D4; /* Highlight button on hover */
+            color: #121212;
+            transform: scale(1.1) translateY(-2px); /* 3D hover effect */
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 184, 212, 0.5); /* Enhanced shadow with glow */
+        }
+
+        #zoom-in:active, #zoom-out:active {
+            background-color: #00869e; /* Darker shade for active state */
+            transform: scale(0.95) translateY(1px); /* Press effect */
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2); /* Smaller shadow on active */
+        }
+
+        /* Enhanced Legend with glass morphism */
+        #legend {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(18, 18, 18, 0.7); /* More transparent background */
+            padding: 20px 28px; /* Increased padding */
+            border-radius: 12px;
+            color: #EEEEEE; /* Off-white text color */
+            font-size: 15px;
+            display: flex;
+            gap: 30px; /* Increased gap */
+            z-index: 10;
+            border: 1px solid rgba(74, 85, 104, 0.4); /* Softer border */
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.4), inset 0 0 20px rgba(255, 255, 255, 0.05); /* Enhanced 3D shadow */
+            backdrop-filter: blur(8px); /* Glass effect */
+            transition: all 0.3s ease;
+        }
+
+        #legend div {
+            display: flex;
+            align-items: center;
+            gap: 14px; /* Increased gap */
+            padding: 5px 10px;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+        
+        #legend div:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px) scale(1.05); /* Enhanced hover effect */
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2); /* Shadow on hover */
+        }
+
+        #legend span {
+            width: 20px; /* Larger legend icons */
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 10px; /* Increased margin */
+            border: 2px solid rgba(18, 18, 18, 0.5); /* Softer border */
+            box-shadow: 0 0 8px rgba(255, 255, 255, 0.2); /* Subtle glow */
+            transition: all 0.3s ease;
+        }
+        
+        #legend div:hover span {
+            transform: scale(1.2) rotate(10deg); /* Rotate on hover for playful effect */
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.4); /* Enhanced glow on hover */
+        }
+    </style>
+</head>
+<body>
+    <div id="loading-screen">
+        <div class="loader"></div>
+    </div>
+
+    <div id="zoom-controls">
+        <button id="zoom-in">+</button>
+        <button id="zoom-out">-</button>
+    </div>
+
+    <svg></svg>
+
+    <div id="legend">
+        <div><span style="background-color: #00B8D4;"></span> Core Concept</div>
+        <div><span style="background-color: #81D4FA;"></span> Key Area</div>
+        <div><span style="background-color: #FFFFFF;"></span> Subtopic</div>
+    </div>
+    <script>
+        const svg = d3.select("svg")
+            .attr("width", window.innerWidth)
+            .attr("height", window.innerHeight);
+
+        const mindMapGroup = svg.append("g").attr("transform", "translate(0,0)");
+
+        // Add gradient definitions for enhanced visuals
+        const defs = svg.append("defs");
+        
+        // Create radial gradient for nodes
+        const nodeGradient = defs.append("radialGradient")
+            .attr("id", "nodeGradient")
+            .attr("cx", "30%")
+            .attr("cy", "30%")
+            .attr("r", "70%");
+            
+        nodeGradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", "rgba(50, 50, 50, 0.95)");
+            
+        nodeGradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", "rgba(25, 25, 25, 0.85)");
+        
+        // Create gradient for center node
+        const centerNodeGradient = defs.append("radialGradient")
+            .attr("id", "centerNodeGradient")
+            .attr("cx", "30%")
+            .attr("cy", "30%")
+            .attr("r", "70%");
+            
+        centerNodeGradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", "#00E5FF");
+            
+        centerNodeGradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", "#0097A7");
+        
+        // Create gradient for level-1 nodes
+        const level1NodeGradient = defs.append("radialGradient")
+            .attr("id", "level1NodeGradient")
+            .attr("cx", "30%")
+            .attr("cy", "30%")
+            .attr("r", "70%");
+            
+        level1NodeGradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", "rgba(60, 60, 60, 0.95)");
+            
+        level1NodeGradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", "rgba(35, 35, 35, 0.85)");
+        
+        // Create gradient for level-2 nodes
+        const level2NodeGradient = defs.append("radialGradient")
+            .attr("id", "level2NodeGradient")
+            .attr("cx", "30%")
+            .attr("cy", "30%")
+            .attr("r", "70%");
+            
+        level2NodeGradient.append("stop")
+            .attr("offset", "0%")
+            .attr("stop-color", "rgba(45, 45, 45, 0.95)");
+            
+        level2NodeGradient.append("stop")
+            .attr("offset", "100%")
+            .attr("stop-color", "rgba(30, 30, 30, 0.85)");
+
+        // Add Neon Glow Effect with enhanced parameters
+        const filter = defs.append("filter")
+            .attr("id", "glow")
+            .attr("height", "300%")
+            .attr("width", "300%")
+            .attr("x", "-100%")
+            .attr("y", "-100%");
+            
+        filter.append("feGaussianBlur")
+            .attr("stdDeviation", "4")
+            .attr("result", "coloredBlur");
+            
+        const feMerge = filter.append("feMerge");
+        feMerge.append("feMergeNode")
+            .attr("in", "coloredBlur");
+        feMerge.append("feMergeNode")
+            .attr("in", "SourceGraphic");
+
+        // Enhanced glow filter for highlighted elements
+        const highlightFilter = defs.append("filter")
+            .attr("id", "highlight-glow")
+            .attr("height", "300%")
+            .attr("width", "300%")
+            .attr("x", "-100%")
+            .attr("y", "-100%");
+            
+        highlightFilter.append("feGaussianBlur")
+            .attr("stdDeviation", "8")
+            .attr("result", "coloredBlur");
+            
+        const highlightMerge = highlightFilter.append("feMerge");
+        highlightMerge.append("feMergeNode")
+            .attr("in", "coloredBlur");
+        highlightMerge.append("feMergeNode")
+            .attr("in", "SourceGraphic");
+
+        let zoomTransform = d3.zoomIdentity;
+
+        const zoom = d3.zoom()
+            .scaleExtent([0.5, 3])
+            .on("zoom", zoomed);
+
+        svg.call(zoom);
+
+        function zoomed() {
+            zoomTransform = d3.event.transform;
+            mindMapGroup.attr("transform", zoomTransform);
+        }
+
+        // Enhanced Zoom Buttons with smoother transitions
+        d3.select("#zoom-in").on("click", () => zoomSVG(0.2));
+        d3.select("#zoom-out").on("click", () => zoomSVG(-0.2));
+
+        function zoomSVG(delta) {
+            zoomTransform.k = Math.min(3, Math.max(0.5, zoomTransform.k + delta));
+            svg.transition().duration(500)
+               .ease(d3.easeCubicOut)
+               .call(zoom.transform, zoomTransform);
+        }
+
+        // Mind Map Data
+        const data = {
+            nodes: [
+                { id: "cybersecurity", label: "Cybersecurity", color: "#00B8D4", isCenter: true, level: 0 },
+                { id: "networkSecurity", label: "Network Security", color: "#81D4FA", parent: "cybersecurity", level: 1 },
+                { id: "endpointSecurity", label: "Endpoint Security", color: "#81D4FA", parent: "cybersecurity", level: 1 },
+                { id: "dataProtection", label: "Data Protection", color: "#81D4FA", parent: "cybersecurity", level: 1 },
+                { id: "identityAccess", label: "Identity & Access", color: "#81D4FA", parent: "cybersecurity", level: 1 },
+
+                { id: "firewalls", label: "Firewalls", color: "#FFFFFF", parent: "networkSecurity", level: 2 },
+                { id: "intrusionDetection", label: "Intrusion Detection", color: "#FFFFFF", parent: "networkSecurity", level: 2 },
+                { id: "vpn", label: "VPNs", color: "#FFFFFF", parent: "networkSecurity", level: 2 },
+                { id: "networkSegmentation", label: "Network Segmentation", color: "#FFFFFF", parent: "networkSecurity", level: 2 },
+                { id: "wirelessSecurity", label: "Wireless Security", color: "#FFFFFF", parent: "networkSecurity", level: 2 },
+                { id: "dnsSecurity", label: "DNS Security", color: "#FFFFFF", parent: "networkSecurity", level: 2 },
+                { id: "loadBalancing", label: "Load Balancing", color: "#FFFFFF", parent: "networkSecurity", level: 2 },
+
+                { id: "antivirus", label: "Antivirus", color: "#FFFFFF", parent: "endpointSecurity", level: 2 },
+                { id: "edr", label: "EDR", color: "#FFFFFF", parent: "endpointSecurity", level: 2 },
+                { id: "mobileSecurity", label: "Mobile Security", color: "#FFFFFF", parent: "endpointSecurity", level: 2 },
+                { id: "hids", label: "HIDS", color: "#FFFFFF", parent: "endpointSecurity", level: 2 },
+                { id: "hostFirewall", label: "Host Firewall", color: "#FFFFFF", parent: "endpointSecurity", level: 2 },
+                { id: "deviceEncryption", label: "Device Encryption", color: "#FFFFFF", parent: "endpointSecurity", level: 2 },
+                { id: "applicationControl", label: "Application Control", color: "#FFFFFF", parent: "endpointSecurity", level: 2 },
+
+                { id: "encryption", label: "Encryption", color: "#FFFFFF", parent: "dataProtection", level: 2 },
+                { id: "dlp", label: "DLP", color: "#FFFFFF", parent: "dataProtection", level: 2 },
+                { id: "dataMasking", label: "Data Masking", color: "#FFFFFF", parent: "dataProtection", level: 2 },
+                { id: "dataClassification", label: "Data Classification", color: "#FFFFFF", parent: "dataProtection", level: 2 },
+                { id: "dataAuditing", label: "Data Auditing", color: "#FFFFFF", parent: "dataProtection", level: 2 },
+                { id: "keyManagement", label: "Key Management", color: "#FFFFFF", parent: "dataProtection", level: 2 },
+                { id: "backupRecovery", label: "Backup/Recovery", color: "#FFFFFF", parent: "dataProtection", level: 2 },
+
+                { id: "authentication", label: "Authentication", color: "#FFFFFF", parent: "identityAccess", level: 2 },
+                { id: "authorization", label: "Authorization", color: "#FFFFFF", parent: "identityAccess", level: 2 },
+                { id: "iam", label: "IAM", color: "#FFFFFF", parent: "identityAccess", level: 2 },
+                { id: "mfa", label: "MFA", color: "#FFFFFF", parent: "identityAccess", level: 2 },
+                { id: "privAccessMgmt", label: "Privileged Access Mgmt", color: "#FFFFFF", parent: "identityAccess", level: 2 },
+                { id: "accessCertification", label: "Access Certification", color: "#FFFFFF", parent: "identityAccess", level: 2 },
+                { id: "sso", label: "Single Sign-On", color: "#FFFFFF", parent: "identityAccess", level: 2 },
+            ],
+            links: [
+                { source: "cybersecurity", target: "networkSecurity" },
+                { source: "cybersecurity", target: "endpointSecurity" },
+                { source: "cybersecurity", target: "dataProtection" },
+                { source: "cybersecurity", target: "identityAccess" },
+
+                { source: "networkSecurity", target: "firewalls" },
+                { source: "networkSecurity", target: "intrusionDetection" },
+                { source: "networkSecurity", target: "vpn" },
+                { source: "networkSecurity", target: "networkSegmentation" },
+                { source: "networkSecurity", target: "wirelessSecurity" },
+                { source: "networkSecurity", target: "dnsSecurity" },
+                { source: "networkSecurity", target: "loadBalancing" },
+
+                { source: "endpointSecurity", target: "antivirus" },
+                { source: "endpointSecurity", target: "edr" },
+                { source: "endpointSecurity", target: "mobileSecurity" },
+                { source: "endpointSecurity", target: "hids" },
+                { source: "endpointSecurity", target: "hostFirewall" },
+                { source: "endpointSecurity", target: "deviceEncryption" },
+                { source: "endpointSecurity", target: "applicationControl" },
+
+                { source: "dataProtection", target: "encryption" },
+                { source: "dataProtection", target: "dlp" },
+                { source: "dataProtection", target: "dataMasking" },
+                { source: "dataProtection", target: "dataClassification" },
+                { source: "dataProtection", target: "dataAuditing" },
+                { source: "dataProtection", target: "keyManagement" },
+                { source: "dataProtection", target: "backupRecovery" },
+
+                { source: "identityAccess", target: "authentication" },
+                { source: "identityAccess", target: "authorization" },
+                { source: "identityAccess", target: "iam" },
+                { source: "identityAccess", target: "mfa" },
+                { source: "identityAccess", target: "privAccessMgmt" },
+                { source: "identityAccess", target: "accessCertification" },
+                { source: "identityAccess", target: "sso" },
+            ]
+        };
+
+        // Enhanced Force Simulation with improved physics
+        const simulation = d3.forceSimulation(data.nodes)
+            .force("link", d3.forceLink(data.links).id(d => d.id)
+                .distance(d => {
+                    // Dynamic link distance based on node levels with more natural spacing
+                    if (d.source.isCenter || d.target.isCenter) return 200;
+                    if (d.source.level === 1 || d.target.level === 1) return 160;
+                    return 130;
+                })
+                .strength(d => {
+                    // Dynamic link strength based on node levels for better stability
+                    if (d.source.isCenter || d.target.isCenter) return 0.6;
+                    if (d.source.level === 1 || d.target.level === 1) return 0.7;
+                    return 0.8;
+                }))
+            .force("charge", d3.forceManyBody()
+                .strength(d => d.isCenter ? -800 : (d.level === 1 ? -500 : -300)) // Stronger repulsion for better spacing
+                .distanceMax(600)) // Increased distance of effect
+            .force("collision", d3.forceCollide()
+                .radius(d => d.isCenter ? 90 : (d.level === 1 ? 70 : 50)) // Larger collision radius for better spacing
+                .strength(0.95) // Stronger collision detection
+                .iterations(5)) // More iterations for better accuracy
+            .force("center", d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2))
+            .force("x", d3.forceX(window.innerWidth / 2).strength(0.03)) // Gentler force toward center X
+            .force("y", d3.forceY(window.innerHeight / 2).strength(0.03)) // Gentler force toward center Y
+            .alphaDecay(0.01) // Slower decay for smoother animation
+            .velocityDecay(0.3); // Lower velocity decay for more natural movement
+
+        // Create particle system for visual enhancement
+        const particleGroup = mindMapGroup.append("g").attr("class", "particles");
+        
+        // Function to create particles
+        function createParticles() {
+            const particles = [];
+            for (let i = 0; i < 50; i++) {
+                particles.push({
+                    x: Math.random() * window.innerWidth,
+                    y: Math.random() * window.innerHeight,
+                    size: Math.random() * 3 + 1,
+                    speedX: (Math.random() - 0.5) * 0.5,
+                    speedY: (Math.random() - 0.5) * 0.5,
+                    opacity: Math.random() * 0.5 + 0.1
+                });
+            }
+            
+            return particles;
+        }
+        
+        const particles = createParticles();
+        
+        // Add particles to the visualization
+        const particleElements = particleGroup.selectAll(".particle")
+            .data(particles)
+            .enter()
+            .append("circle")
+            .attr("class", "particle")
+            .attr("cx", d => d.x)
+            .attr("cy", d => d.y)
+            .attr("r", d => d.size)
+            .attr("fill", "#00B8D4")
+            .style("opacity", d => d.opacity)
+            .style("filter", "blur(1px)");
+        
+        // Animate particles
+        function animateParticles() {
+            particleElements
+                .each(function(d) {
+                    d.x += d.speedX;
+                    d.y += d.speedY;
+                    
+                    // Wrap around edges
+                    if (d.x < 0) d.x = window.innerWidth;
+                    if (d.x > window.innerWidth) d.x = 0;
+                    if (d.y < 0) d.y = window.innerHeight;
+                    if (d.y > window.innerHeight) d.y = 0;
+                })
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y);
+                
+            requestAnimationFrame(animateParticles);
+        }
+        
+        // Start particle animation
+        animateParticles();
+
+        // Enhanced Links with level-based styling and animations
+        const link = mindMapGroup.append("g")
+            .attr("class", "links")
+            .selectAll("path")
+            .data(data.links)
+            .enter()
+            .append("path")
+            .attr("class", d => {
+                // Determine link level based on connected nodes
+                let classes = "link";
+                if (d.source.isCenter || d.target.isCenter) {
+                    classes += " level-1";
+                } else if (d.source.level === 1 || d.target.level === 1) {
+                    classes += " level-2";
+                }
+                return classes;
+            })
+            .attr("id", (d, i) => `link-${i}`); // Add unique ID to each link for easier selection
+
+        // Enhanced Nodes with level-based styling and gradient fills
+        const node = mindMapGroup.append("g")
+            .attr("class", "nodes")
+            .selectAll(".node")
+            .data(data.nodes)
+            .enter()
+            .append("g")
+            .attr("class", d => {
+                let classes = "node";
+                if (d.id === 'cybersecurity') classes += " center-node";
+                if (d.level !== undefined) classes += ` level-${d.level}`;
+                return classes;
+            })
+            .call(d3.drag()
+                .on("start", dragstarted)
+                .on("drag", dragged)
+                .on("end", dragended))
+            .on('click', handleNodeClick);
+
+        // Enhanced node click handler with improved visual effects
+        function handleNodeClick(clickedNode) {
+            // Reset all elements with smooth transition
+            node.classed('blurred', false).classed('highlighted', false);
+            link.classed('blurred', false).classed('highlighted', false);
+            
+            // Find the path from root to the clicked node
+            const pathNodes = [];
+            const pathLinks = [];
+            
+            // If it's the root node, just highlight it
+            if (clickedNode.id === 'cybersecurity') {
+                pathNodes.push(clickedNode.id);
+                
+                // For the center node, highlight all direct connections
+                data.links.forEach(l => {
+                    if (l.source.id === 'cybersecurity' || l.target.id === 'cybersecurity') {
+                        pathLinks.push(l);
+                        // Add the connected node to pathNodes
+                        const connectedNodeId = l.source.id === 'cybersecurity' ? l.target.id : l.source.id;
+                        if (!pathNodes.includes(connectedNodeId)) {
+                            pathNodes.push(connectedNodeId);
+                        }
+                    }
+                });
+            } else {
+                // For non-root nodes, find the complete path
+                let currentNode = clickedNode;
+                pathNodes.push(currentNode.id);
+                
+                // Traverse up to find the path to root
+                while (currentNode.parent) {
+                    // Find the link between current node and its parent
+                    const parentLink = data.links.find(l => 
+                        (l.source.id === currentNode.id && l.target.id === currentNode.parent) ||
+                        (l.source.id === currentNode.parent && l.target.id === currentNode.id) ||
+                        (typeof l.source === 'object' && l.source.id === currentNode.id && l.target.id === currentNode.parent) ||
+                        (typeof l.source === 'object' && l.source.id === currentNode.parent && l.target.id === currentNode.id)
+                    );
+                    
+                    if (parentLink) {
+                        pathLinks.push(parentLink);
+                    }
+                    
+                    // Find the parent node
+                    const parentNode = data.nodes.find(n => n.id === currentNode.parent);
+                    if (parentNode) {
+                        pathNodes.push(parentNode.id);
+                        currentNode = parentNode;
+                    } else {
+                        break;
+                    }
+                }
+                
+                // Also highlight siblings (nodes with the same parent)
+                if (clickedNode.parent) {
+                    data.nodes.forEach(n => {
+                        if (n.parent === clickedNode.parent && n.id !== clickedNode.id) {
+                            // Add sibling nodes with reduced highlight effect
+                            pathNodes.push(n.id);
+                            
+                            // Find and add the link to the sibling
+                            const siblingLink = data.links.find(l => 
+                                (l.source.id === n.id && l.target.id === n.parent) ||
+                                (l.source.id === n.parent && l.target.id === n.id) ||
+                                (typeof l.source === 'object' && l.source.id === n.id && l.target.id === n.parent) ||
+                                (typeof l.source === 'object' && l.source.id === n.parent && l.target.id === n.id)
+                            );
+                            
+                            if (siblingLink && !pathLinks.includes(siblingLink)) {
+                                pathLinks.push(siblingLink);
+                            }
+                        }
+                    });
+                }
+            }
+            
+            // Apply enhanced staggered animation for path highlighting
+            // First blur everything with a smooth transition
+            node.classed('blurred', d => !pathNodes.includes(d.id));
+            link.classed('blurred', l => !pathLinks.includes(l));
+            
+            // Then highlight the path with sequential animation
+            // Highlight nodes in sequence from root to clicked node
+            const highlightDelay = 80; // milliseconds between each highlight
+            
+            pathNodes.forEach((nodeId, index) => {
+                setTimeout(() => {
+                    node.filter(d => d.id === nodeId)
+                        .classed('highlighted', true)
+                        .select('circle')
+                        .transition()
+                        .duration(300)
+                        .attr('r', d => d.isCenter ? 80 : (d.level === 1 ? 50 : 45))
+                        .transition()
+                        .duration(300)
+                        .attr('r', d => d.isCenter ? 75 : (d.level === 1 ? 45 : 42));
+                        
+                    // Add particle burst effect on highlight
+                    const highlightedNode = node.filter(d => d.id === nodeId).datum();
+                    createParticleBurst(highlightedNode.x, highlightedNode.y, 10);
+                }, index * highlightDelay);
+            });
+            
+            // Highlight links with a slight delay after nodes
+            pathLinks.forEach((l, index) => {
+                setTimeout(() => {
+                    link.filter(link => link === l)
+                        .classed('highlighted', true)
+                        .transition()
+                        .duration(300)
+                        .style('stroke-dasharray', '10, 10'); // Animated dash pattern
+                }, (index * highlightDelay) + 50);
+            });
+            
+            // Zoom to fit the highlighted path if it's not the center node
+            if (clickedNode.id !== 'cybersecurity') {
+                // Calculate the bounding box of highlighted nodes
+                const highlightedNodes = data.nodes.filter(d => pathNodes.includes(d.id));
+                if (highlightedNodes.length > 0) {
+                    const padding = 120; // Increased padding around the bounding box
+                    
+                    // Find min/max coordinates of highlighted nodes
+                    let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+                    highlightedNodes.forEach(d => {
+                        minX = Math.min(minX, d.x);
+                        minY = Math.min(minY, d.y);
+                        maxX = Math.max(maxX, d.x);
+                        maxY = Math.max(maxY, d.y);
+                    });
+                    
+                    // Calculate center and scale
+                    const centerX = (minX + maxX) / 2;
+                    const centerY = (minY + maxY) / 2;
+                    const width = maxX - minX + padding * 2;
+                    const height = maxY - minY + padding * 2;
+                    const scale = Math.min(window.innerWidth / width, window.innerHeight / height, 2); // Limit max zoom
+                    
+                    // Animate zoom to the path with smoother easing
+                    svg.transition()
+                        .duration(900)
+                        .ease(d3.easeCubicInOut)
+                        .call(zoom.transform, d3.zoomIdentity
+                            .translate(window.innerWidth / 2, window.innerHeight / 2)
+                            .scale(scale)
+                            .translate(-centerX, -centerY));
+                }
+            }
+            
+            // Update the visualization
+            d3.event.stopPropagation();
+        }
+        
+        // Function to create particle burst effect
+        function createParticleBurst(x, y, count) {
+            const burstParticles = [];
+            
+            for (let i = 0; i < count; i++) {
+                const angle = Math.random() * Math.PI * 2;
+                const speed = Math.random() * 3 + 1;
+                burstParticles.push({
+                    x: x,
+                    y: y,
+                    size: Math.random() * 4 + 2,
+                    speedX: Math.cos(angle) * speed,
+                    speedY: Math.sin(angle) * speed,
+                    opacity: 0.8,
+                    life: 1.0 // Life from 1.0 to 0.0
+                });
+            }
+            
+            const burst = particleGroup.selectAll(".burst-particle")
+                .data(burstParticles)
+                .enter()
+                .append("circle")
+                .attr("class", "burst-particle")
+                .attr("cx", d => d.x)
+                .attr("cy", d => d.y)
+                .attr("r", d => d.size)
+                .attr("fill", "#00E5FF")
+                .style("opacity", d => d.opacity)
+                .style("filter", "blur(1px)");
+                
+            function animateBurst() {
+                let particlesAlive = false;
+                
+                burst
+                    .each(function(d) {
+                        d.x += d.speedX;
+                        d.y += d.speedY;
+                        d.life -= 0.02;
+                        d.opacity = d.life * 0.8;
+                        d.size *= 0.98;
+                        
+                        if (d.life > 0) {
+                            particlesAlive = true;
+                        }
+                    })
+                    .attr("cx", d => d.x)
+                    .attr("cy", d => d.y)
+                    .attr("r", d => d.size)
+                    .style("opacity", d => d.opacity);
+                    
+                if (particlesAlive) {
+                    requestAnimationFrame(animateBurst);
+                } else {
+                    burst.remove();
+                }
+            }
+            
+            animateBurst();
+        }
+
+        // Click on background to reset
+        svg.on('click', () => {
+            node.classed('blurred', false).classed('highlighted', false);
+            link.classed('blurred', false).classed('highlighted', false);
+            
+            // Smooth transition back to center view
+            svg.transition()
+                .duration(800)
+                .ease(d3.easeCubicInOut)
+                .call(zoom.transform, d3.zoomIdentity
+                    .translate(window.innerWidth / 2, window.innerHeight / 2)
+                    .scale(1)
+                    .translate(-window.innerWidth / 2, -window.innerHeight / 2));
+        });
+
+        // Enhanced node circles with gradient fills
+        node.append("circle")
+            .attr("r", d => d.isCenter ? 75 : (d.level === 1 ? 45 : 40)) // Increased node radius
+            .attr("fill", d => {
+                if (d.isCenter) return "url(#centerNodeGradient)";
+                if (d.level === 1) return "url(#level1NodeGradient)";
+                return "url(#level2NodeGradient)";
+            })
+            .style("stroke", d => {
+                // Create a darker stroke color for better definition
+                const color = d3.color(d.color);
+                return color.darker(0.5);
+            })
+            .style("stroke-width", d => d.isCenter ? 4 : 3) // Thicker borders
+            .style("filter", d => d.isCenter ? "url(#highlight-glow)" : "url(#glow)");
+
+        // Enhanced node text with better styling
+        node.append("text")
+            .text(d => d.label)
+            .attr("class", "label")
+            .style("font-size", d => d.isCenter ? "22px" : (d.level === 1 ? "16px" : "14px")) // Varied font sizes
+            .attr("text-anchor", "middle")
+            .attr("dominant-baseline", "middle")
+            .style("font-weight", d => d.isCenter ? 700 : (d.level === 1 ? 500 : 400)); // Varied font weights
+
+        // Enhanced simulation tick function with smoother link curves
+        simulation.on("tick", () => {
+            // Update links as curved paths with enhanced aesthetics
+            link.attr("d", d => {
+                const dx = d.target.x - d.source.x,
+                      dy = d.target.y - d.source.y,
+                      dr = Math.sqrt(dx * dx + dy * dy) * 1.2; // Increased curve factor
+                
+                // Create a slightly curved line with better aesthetics
+                return `M${d.source.x},${d.source.y} A${dr},${dr} 0 0,1 ${d.target.x},${d.target.y}`;
+            });
+
+            node.attr("transform", d => `translate(${d.x},${d.y})`);
+        });
+
+        // Enhanced Drag Functions with smoother interactions
+        function dragstarted(d) {
+            if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+            
+            // Add visual feedback for dragging
+            d3.select(this).select("circle")
+                .transition()
+                .duration(200)
+                .attr("r", d => (d.isCenter ? 75 : (d.level === 1 ? 45 : 40)) * 1.1);
+        }
+
+        function dragged(d) {
+            d.fx = d3.event.x;
+            d.fy = d3.event.y;
+            
+            // Create subtle particle trail effect while dragging
+            if (Math.random() > 0.7) { // Only create particles occasionally
+                createParticleBurst(d.x, d.y, 2);
+            }
+        }
+
+        function dragended(d) {
+            if (!d3.event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+            
+            // Reset node size with smooth transition
+            d3.select(this).select("circle")
+                .transition()
+                .duration(300)
+                .attr("r", d => d.isCenter ? 75 : (d.level === 1 ? 45 : 40));
+        }
+
+        // Enhanced Resize Listener with smoother transitions
+        window.addEventListener("resize", () => {
+            svg.attr("width", window.innerWidth).attr("height", window.innerHeight);
+            
+            // Smooth transition to new center
+            simulation.force("center", d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2))
+                .alpha(0.3)
+                .restart();
+        });
+
+        // Enhanced Loading Screen with smoother transition
+        setTimeout(() => {
+            document.getElementById('loading-screen').classList.add('hidden');
+            
+            // Add initial animation effect when loaded
+            node.select("circle")
+                .attr("r", 0)
+                .transition()
+                .delay((d, i) => i * 30)
+                .duration(800)
+                .ease(d3.easeCubicOut)
+                .attr("r", d => d.isCenter ? 75 : (d.level === 1 ? 45 : 40));
+                
+            // Add initial link animation
+            link
+                .style("stroke-dasharray", "0, 30")
+                .style("stroke-dashoffset", "0")
+                .transition()
+                .delay((d, i) => i * 20 + 500)
+                .duration(1000)
+                .ease(d3.easeCubicOut)
+                .style("stroke-dasharray", d => {
+                    if (d.source.isCenter || d.target.isCenter) return "7, 3";
+                    if (d.source.level === 1 || d.target.level === 1) return "4, 2";
+                    return "5, 3";
+                });
+        }, 2000); 
+    </script>
+</body>
+</html>
