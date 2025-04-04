@@ -1,0 +1,670 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cybersecurity Mind Map</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #1a1a1a;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+        }
+        /* Node styling with gradients */
+        .node circle {
+            transition: all 0.4s ease;
+            filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.6));
+        }
+        .node .node-shape {
+            transition: all 0.4s ease;
+            filter: drop-shadow(0 0 5px rgba(0, 0, 0, 0.6));
+        }
+        .link {
+            stroke-opacity: 0.7;
+            stroke-width: 2.5px;
+            transition: all 0.4s ease;
+        }
+        
+        /* Path highlighting styles */
+        .node.highlighted .node-shape {
+            stroke: #00B8D4;
+            stroke-width: 4px;
+            filter: drop-shadow(0 0 12px #00B8D4);
+        }
+        
+        .node.highlighted text {
+            fill: #00B8D4;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        
+        .link.highlighted {
+            stroke: #00B8D4;
+            stroke-width: 3px;
+            stroke-opacity: 0.9;
+            filter: drop-shadow(0 0 10px #00B8D4);
+            animation: pulse-link 1.5s infinite alternate;
+        }
+        
+        @keyframes pulse-link {
+            0% { filter: drop-shadow(0 0 3px #00B8D4); }
+            100% { filter: drop-shadow(0 0 10px #00B8D4); }
+        }
+        
+        .node.blurred .node-shape,
+        .node.blurred text {
+            filter: blur(2px);
+            opacity: 0.4;
+        }
+        
+        .link.blurred {
+            filter: blur(1px);
+            opacity: 0.2;
+        }
+        .label {
+            font-size: 13px;
+            fill: #ffffff;
+            pointer-events: none;
+            transition: all 0.4s ease;
+            font-weight: 500;
+            text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+        }
+        svg {
+            cursor: grab;
+            display: block;
+            width: 100vw;
+            height: 100vh;
+        }
+        svg:active {
+            cursor: grabbing;
+        }
+        #zoom-controls {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+            z-index: 10;
+        }
+        #zoom-in, #zoom-out {
+            padding: 8px 12px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            background-color: #2a2a2a;
+            color: #e0e0e0;
+            border: none;
+            cursor: pointer;
+            user-select: none;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+        #zoom-in:hover, #zoom-out:hover {
+            background-color: #ddd;
+        }
+        #zoom-in:active, #zoom-out:active {
+            background-color: #ccc;
+        }
+        .tooltip {
+            position: absolute;
+            background-color: rgba(30, 30, 40, 0.95);
+            color: #ffffff;
+            padding: 18px;
+            border-radius: 12px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.4);
+            backdrop-filter: blur(8px);
+            opacity: 0;
+            pointer-events: none;
+            transition: all 0.4s ease;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            max-width: 300px;
+            transform: translateY(10px);
+            z-index: 1000;
+        }
+        
+        .tooltip h4 {
+            margin: 0 0 8px;
+            color: #4a90e2;
+            font-size: 16px;
+            font-weight: 600;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            padding-bottom: 8px;
+        }
+        
+        .tooltip p {
+            margin: 0;
+            line-height: 1.5;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div id="zoom-controls">
+        <button id="zoom-in">+</button>
+        <button id="zoom-out">-</button>
+    </div>
+    <svg width="100%" height="100%">
+        <defs>
+            <filter id="glow" x="-50%" y="-50%" width="200%" height="200%">
+                <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+                <feMerge>
+                    <feMergeNode in="coloredBlur"/>
+                    <feMergeNode in="SourceGraphic"/>
+                </feMerge>
+            </filter>
+            
+            <!-- Gradient definitions for nodes -->
+            <linearGradient id="centerGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#4a90e2" stop-opacity="1"/>
+                <stop offset="100%" stop-color="#2e5d9e" stop-opacity="1"/>
+            </linearGradient>
+            
+            <linearGradient id="networkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#2ecc71" stop-opacity="1"/>
+                <stop offset="100%" stop-color="#27ae60" stop-opacity="1"/>
+            </linearGradient>
+            
+            <linearGradient id="dataGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#3498db" stop-opacity="1"/>
+                <stop offset="100%" stop-color="#2980b9" stop-opacity="1"/>
+            </linearGradient>
+            
+            <linearGradient id="appGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#9b59b6" stop-opacity="1"/>
+                <stop offset="100%" stop-color="#8e44ad" stop-opacity="1"/>
+            </linearGradient>
+            
+            <linearGradient id="incidentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#e74c3c" stop-opacity="1"/>
+                <stop offset="100%" stop-color="#c0392b" stop-opacity="1"/>
+            </linearGradient>
+            
+            <linearGradient id="riskGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#f1c40f" stop-opacity="1"/>
+                <stop offset="100%" stop-color="#f39c12" stop-opacity="1"/>
+            </linearGradient>
+            
+            <linearGradient id="userGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#1abc9c" stop-opacity="1"/>
+                <stop offset="100%" stop-color="#16a085" stop-opacity="1"/>
+            </linearGradient>
+            
+            <linearGradient id="leafGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stop-color="#34495e" stop-opacity="1"/>
+                <stop offset="100%" stop-color="#2c3e50" stop-opacity="1"/>
+            </linearGradient>
+        </defs>
+    </svg>
+    <div class="tooltip"></div>
+    <script>
+        const svg = d3.select("svg"),
+            width = window.innerWidth,
+            height = window.innerHeight;
+
+        const mindMapGroup = svg.append("g")
+            .attr("transform", "translate(0,0)");
+
+        let zoomTransform = d3.zoomIdentity;
+        const zoom = d3.zoom()
+            .scaleExtent([0.5, 3])
+            .on("zoom", zoomed)
+            .on("start", (event) => {
+                if (event.sourceEvent && event.sourceEvent.type === "dblclick") {
+                    d3.event.preventDefault(); // Disable default zoom
+                }
+            });
+
+        svg.call(zoom);
+
+        function zoomed() {
+            zoomTransform = d3.event.transform;
+            mindMapGroup.attr("transform", zoomTransform);
+        }
+
+        const zoomInButton = d3.select("#zoom-in")
+            .on("click", () => {
+                zoomTransform.k = Math.min(3, zoomTransform.k + 0.2);
+                svg.call(zoom.transform, zoomTransform);
+            });
+
+        const zoomOutButton = d3.select("#zoom-out")
+            .on("click", () => {
+                zoomTransform.k = Math.max(0.5, zoomTransform.k - 0.2);
+                svg.call(zoom.transform, zoomTransform);
+            });
+
+        const data = {
+    "nodes": [
+        { "id": "cybersecurity", "label": "Cybersecurity", "color": "#4a90e2", "isCenter": true },
+        { "id": "networkSecurity", "label": "Network Security", "color": "#2ecc71", "parent": "cybersecurity" },
+        { "id": "firewalls", "label": "Firewalls", "color": "white", "parent": "networkSecurity" },
+        { "id": "idps", "label": "IDPS", "color": "white", "parent": "networkSecurity" },
+        { "id": "vpn", "label": "VPNs", "color": "white", "parent": "networkSecurity" },
+        { "id": "segmentation", "label": "Segmentation", "color": "white", "parent": "networkSecurity" },
+        { "id": "wirelessSecurity", "label": "Wireless Security", "color": "white", "parent": "networkSecurity" },
+
+        { "id": "dataSecurity", "label": "Data Security", "color": "blue", "parent": "cybersecurity" },
+        { "id": "encryption", "label": "Encryption", "color": "white", "parent": "dataSecurity" },
+        { "id": "accessControl", "label": "Access Control", "color": "white", "parent": "dataSecurity" },
+        { "id": "dlp", "label": "DLP", "color": "white", "parent": "dataSecurity" },
+        { "id": "databaseSecurity", "label": "Database Security", "color": "white", "parent": "dataSecurity" },
+        { "id": "backupRecovery", "label": "Backup/Recovery", "color": "white", "parent": "dataSecurity" },
+
+        { "id": "applicationSecurity", "label": "Application Security", "color": "blue", "parent": "cybersecurity" },
+        { "id": "secureCoding", "label": "Secure Coding", "color": "white", "parent": "applicationSecurity" },
+        { "id": "waf", "label": "WAFs", "color": "white", "parent": "applicationSecurity" },
+        { "id": "apiSecurity", "label": "API Security", "color": "white", "parent": "applicationSecurity" },
+        { "id": "softwareTesting", "label": "Software Testing", "color": "white", "parent": "applicationSecurity" },
+        { "id": "dependencyManagement", "label": "Dependency Mgmt", "color": "white", "parent": "applicationSecurity" },
+
+        { "id": "incidentResponse", "label": "Incident Response", "color": "blue", "parent": "cybersecurity" },
+        { "id": "detection", "label": "Detection", "color": "white", "parent": "incidentResponse" },
+        { "id": "containment", "label": "Containment", "color": "white", "parent": "incidentResponse" },
+        { "id": "recovery", "label": "Recovery", "color": "white", "parent": "incidentResponse" },
+        { "id": "analysis", "label": "Analysis", "color": "white", "parent": "incidentResponse" },
+        { "id": "communication", "label": "Communication", "color": "white", "parent": "incidentResponse" },
+
+        { "id": "riskManagement", "label": "Risk Management", "color": "blue", "parent": "cybersecurity" },
+        { "id": "riskAssessment", "label": "Risk Assessment", "color": "white", "parent": "riskManagement" },
+        { "id": "vulnerabilityMgmt", "label": "Vulnerability Mgmt", "color": "white", "parent": "riskManagement" },
+        { "id": "securityPolicies", "label": "Security Policies", "color": "white", "parent": "riskManagement" },
+        { "id": "compliance", "label": "Compliance", "color": "white", "parent": "riskManagement" },
+        { "id": "businessContinuity", "label": "Business Continuity", "color": "white", "parent": "riskManagement" },
+
+        { "id": "userAwareness", "label": "User Awareness", "color": "blue", "parent": "cybersecurity" },
+        { "id": "phishing", "label": "Phishing Training", "color": "white", "parent": "userAwareness" },
+        { "id": "passwordMgmt", "label": "Password Mgmt", "color": "white", "parent": "userAwareness" },
+        { "id": "socialEngineering", "label": "Social Eng. Awareness", "color": "white", "parent": "userAwareness" },
+        { "id": "browsing", "label": "Safe Browsing", "color": "white", "parent": "userAwareness" },
+        { "id": "dataHandling", "label": "Data Handling", "color": "white", "parent": "userAwareness" },
+
+    ],
+    "links": [
+        { "source": "cybersecurity", "target": "networkSecurity" },
+        { "source": "networkSecurity", "target": "firewalls" },
+        { "source": "networkSecurity", "target": "idps" },
+        { "source": "networkSecurity", "target": "vpn" },
+        { "source": "networkSecurity", "target": "segmentation" },
+        { "source": "networkSecurity", "target": "wirelessSecurity" },
+
+        { "source": "cybersecurity", "target": "dataSecurity" },
+        { "source": "dataSecurity", "target": "encryption" },
+        { "source": "dataSecurity", "target": "accessControl" },
+        { "source": "dataSecurity", "target": "dlp" },
+        { "source": "dataSecurity", "target": "databaseSecurity" },
+        { "source": "dataSecurity", "target": "backupRecovery" },
+
+        { "source": "cybersecurity", "target": "applicationSecurity" },
+        { "source": "applicationSecurity", "target": "secureCoding" },
+        { "source": "applicationSecurity", "target": "waf" },
+        { "source": "applicationSecurity", "target": "apiSecurity" },
+        { "source": "applicationSecurity", "target": "softwareTesting" },
+        { "source": "applicationSecurity", "target": "dependencyManagement" },
+
+        { "source": "cybersecurity", "target": "incidentResponse" },
+        { "source": "incidentResponse", "target": "detection" },
+        { "source": "incidentResponse", "target": "containment" },
+        { "source": "incidentResponse", "target": "recovery" },
+        { "source": "incidentResponse", "target": "analysis" },
+        { "source": "incidentResponse", "target": "communication" },
+
+        { "source": "cybersecurity", "target": "riskManagement" },
+        { "source": "riskManagement", "target": "riskAssessment" },
+        { "source": "riskManagement", "target": "vulnerabilityMgmt" },
+        { "source": "riskManagement", "target": "securityPolicies" },
+        { "source": "riskManagement", "target": "compliance" },
+        { "source": "riskManagement", "target": "businessContinuity" },
+
+        { "source": "cybersecurity", "target": "userAwareness" },
+        { "source": "userAwareness", "target": "phishing" },
+        { "source": "userAwareness", "target": "passwordMgmt" },
+        { "source": "userAwareness", "target": "socialEngineering" },
+        { "source": "userAwareness", "target": "browsing" },
+        { "source": "userAwareness", "target": "dataHandling" },
+
+        
+    ],
+};
+
+        const simulation = d3.forceSimulation(data.nodes)
+            .force("link", d3.forceLink(data.links).id((d) => d.id).distance(d => {
+                // Increase distance between nodes based on their type
+                if (d.source.id === 'cybersecurity' || d.target.id === 'cybersecurity') {
+                    return 180; // More space between center and main categories
+                } else {
+                    return 120; // More space between categories and leaf nodes
+                }
+            }))
+            .force("charge", d3.forceManyBody().strength(-300)) // Stronger repulsion
+            .force("collision", d3.forceCollide().radius(d => {
+                // Collision radius based on node type
+                if (d.isCenter) return 60;
+                if (d.parent === 'cybersecurity') return 80;
+                return 40;
+            }))
+            .force("center", d3.forceCenter(width / 2, height / 2));
+
+        const link = mindMapGroup.append("g")
+            .attr("class", "links")
+            .selectAll("line")
+            .data(data.links)
+            .enter()
+            .append("line")
+            .attr("class", "link")
+            .attr("stroke-width", d => {
+                // Thicker lines for main connections
+                if (typeof d.source === 'object') {
+                    return d.source.id === 'cybersecurity' ? 3.5 : 2.5;
+                } else {
+                    return d.source === 'cybersecurity' ? 3.5 : 2.5;
+                }
+            })
+            .attr("stroke", d => {
+                // Color links based on their source node
+                let sourceId;
+                if (typeof d.source === 'object') {
+                    sourceId = d.source.id;
+                } else {
+                    sourceId = d.source;
+                }
+                
+                if (sourceId === 'cybersecurity') return '#4a90e2';
+                if (sourceId === 'networkSecurity') return '#2ecc71';
+                if (sourceId === 'dataSecurity') return '#3498db';
+                if (sourceId === 'applicationSecurity') return '#9b59b6';
+                if (sourceId === 'incidentResponse') return '#e74c3c';
+                if (sourceId === 'riskManagement') return '#f1c40f';
+                if (sourceId === 'userAwareness') return '#1abc9c';
+                return '#7f8c8d';
+            })
+            .style("filter", "drop-shadow(0 0 3px rgba(0, 0, 0, 0.3))");
+
+        const node = mindMapGroup.append("g")
+            .attr("class", "nodes")
+            .selectAll("g")
+            .data(data.nodes)
+            .enter()
+            .append("g")
+            .attr("class", "node")
+            .call(
+                d3.drag()
+                    .on("start", dragstarted)
+                    .on("drag", dragged)
+                    .on("end", dragended)
+            );
+
+        // Create different shapes based on node type
+        node.each(function(d) {
+            const elem = d3.select(this);
+            let shape;
+            
+            // Determine which gradient to use based on node id or parent
+            let fillGradient = "url(#leafGradient)";
+            if (d.isCenter) {
+                fillGradient = "url(#centerGradient)";
+            } else if (d.id === "networkSecurity") {
+                fillGradient = "url(#networkGradient)";
+            } else if (d.id === "dataSecurity") {
+                fillGradient = "url(#dataGradient)";
+            } else if (d.id === "applicationSecurity") {
+                fillGradient = "url(#appGradient)";
+            } else if (d.id === "incidentResponse") {
+                fillGradient = "url(#incidentGradient)";
+            } else if (d.id === "riskManagement") {
+                fillGradient = "url(#riskGradient)";
+            } else if (d.id === "userAwareness") {
+                fillGradient = "url(#userGradient)";
+            }
+            
+            // Create different shapes based on node type
+            if (d.isCenter) {
+                // Center node is a hexagon
+                const hexRadius = 50;
+                const hexPoints = [];
+                for (let i = 0; i < 6; i++) {
+                    const angle = (i * Math.PI / 3) - (Math.PI / 6);
+                    hexPoints.push([hexRadius * Math.cos(angle), hexRadius * Math.sin(angle)]);
+                }
+                
+                shape = elem.append("polygon")
+                    .attr("class", "node-shape")
+                    .attr("points", hexPoints.map(p => p.join(",")).join(" "))
+                    .attr("fill", fillGradient)
+                    .attr("stroke", "#ffffff")
+                    .attr("stroke-width", 2);
+            } else if (d.parent === "cybersecurity") {
+                // Main category nodes are rounded rectangles
+                shape = elem.append("rect")
+                    .attr("class", "node-shape")
+                    .attr("width", 140)
+                    .attr("height", 50)
+                    .attr("x", -70)
+                    .attr("y", -25)
+                    .attr("rx", 15)
+                    .attr("ry", 15)
+                    .attr("fill", fillGradient)
+                    .attr("stroke", "#ffffff")
+                    .attr("stroke-width", 2);
+            } else {
+                // Leaf nodes are circles
+                shape = elem.append("circle")
+                    .attr("class", "node-shape")
+                    .attr("r", 30)
+                    .attr("fill", fillGradient)
+                    .attr("stroke", "#ffffff")
+                    .attr("stroke-width", 2);
+            }
+            
+            // Add hover and click effects
+            shape.on("mouseover", function() {
+                if (!elem.classed("highlighted") && !elem.classed("blurred")) {
+                    d3.select(this).transition()
+                        .duration(300)
+                        .style("filter", "drop-shadow(0 0 12px rgba(255, 255, 255, 0.8))")
+                        .attr("stroke-width", 3);
+                    
+                    elem.select(".label")
+                        .transition()
+                        .duration(300)
+                        .style("font-size", (d) => (d.isCenter ? "18px" : d.parent === "cybersecurity" ? "16px" : "14px"))
+                        .style("fill", "#ffffff");
+                }
+            })
+            .on("mouseout", function() {
+                if (!elem.classed("highlighted") && !elem.classed("blurred")) {
+                    d3.select(this).transition()
+                        .duration(300)
+                        .style("filter", "drop-shadow(0 0 5px rgba(0, 0, 0, 0.6))")
+                        .attr("stroke-width", 2);
+                    
+                    elem.select(".label")
+                        .transition()
+                        .duration(300)
+                        .style("font-size", (d) => (d.isCenter ? "16px" : d.parent === "cybersecurity" ? "14px" : "13px"))
+                        .style("fill", "#ffffff");
+                }
+            })
+            .on("dblclick", function() {
+                // Prevent zoom behavior on double-click
+                d3.event.stopPropagation();
+                const x = d.x;
+                const y = d.y;
+                svg.transition()
+                    .duration(750)
+                    .call(zoom.transform, d3.zoomIdentity.translate(width / 2 - x, height / 2 - y).scale(2));
+            })
+            .on("click", function() {
+                d3.event.stopPropagation();
+                handleNodeClick(d);
+            });
+        });
+
+        // Add text labels with better positioning
+        node.append("text")
+            .text((d) => d.label)
+            .attr("text-anchor", "middle")
+            .attr("y", (d) => {
+                if (d.isCenter) return 5;
+                else if (d.parent === "cybersecurity") return 5;
+                else return 3;
+            })
+            .attr("class", "label")
+            .style("font-size", (d) => (d.isCenter ? "16px" : d.parent === "cybersecurity" ? "14px" : "13px"));
+
+        node.append("title").text((d) => d.label);
+
+        // We've already handled text labels in a better way above, so we don't need this section
+
+        simulation.on("tick", () => {
+            link.transition()
+                .duration(50)
+                .ease(d3.easeLinear)
+                .attr("x1", (d) => d.source.x)
+                .attr("y1", (d) => d.source.y)
+                .attr("x2", (d) => d.target.x)
+                .attr("y2", (d) => d.target.y);
+
+            node.transition()
+                .duration(50)
+                .ease(d3.easeLinear)
+                .attr("transform", (d) => `translate(${d.x},${d.y})`);
+        });
+
+        function dragstarted(d) {
+            if (!d3.event.active) simulation.alphaTarget(0.3).restart();
+            d.fx = d.x;
+            d.fy = d.y;
+        }
+
+        function dragged(d) {
+            d.fx = d3.event.x;
+            d.fy = d3.event.y;
+        }
+
+        function dragended(d) {
+            if (!d3.event.active) simulation.alphaTarget(0);
+            d.fx = null;
+            d.fy = null;
+        }
+        
+        // Function to handle node click and path highlighting
+        function handleNodeClick(clickedNode) {
+            // Reset all elements
+            node.classed('blurred', false).classed('highlighted', false);
+            link.classed('blurred', false).classed('highlighted', false);
+            
+            // Find the path from root to the clicked node
+            const pathNodes = [];
+            const pathLinks = [];
+            
+            // If it's the root node, just highlight it
+            if (clickedNode.id === 'cybersecurity') {
+                pathNodes.push(clickedNode.id);
+            } else {
+                // For non-root nodes, find the complete path
+                let currentNode = clickedNode;
+                pathNodes.push(currentNode.id);
+                
+                // Traverse up to find the path to root
+                while (currentNode.parent) {
+                    // Find the link between current node and its parent
+                    const parentLink = data.links.find(l => 
+                        (l.source.id === currentNode.id && l.target.id === currentNode.parent) ||
+                        (l.source.id === currentNode.parent && l.target.id === currentNode.id) ||
+                        (typeof l.source === 'string' && l.source === currentNode.id && l.target === currentNode.parent) ||
+                        (typeof l.source === 'string' && l.source === currentNode.parent && l.target === currentNode.id)
+                    );
+                    
+                    if (parentLink) {
+                        pathLinks.push(parentLink);
+                    }
+                    
+                    // Find the parent node
+                    const parentNode = data.nodes.find(n => n.id === currentNode.parent);
+                    if (parentNode) {
+                        pathNodes.push(parentNode.id);
+                        currentNode = parentNode;
+                    } else {
+                        break;
+                    }
+                }
+            }
+            
+            // Blur all nodes and links except those in the path
+            node.classed('blurred', d => !pathNodes.includes(d.id));
+            link.classed('blurred', l => !pathLinks.includes(l));
+            
+            // Highlight the nodes and links in the path
+            node.classed('highlighted', d => pathNodes.includes(d.id));
+            link.classed('highlighted', l => pathLinks.includes(l));
+        }
+        
+        // Click on background to reset
+        svg.on('click', () => {
+            node.classed('blurred', false).classed('highlighted', false);
+            link.classed('blurred', false).classed('highlighted', false);
+        });
+
+        // Enhanced tooltip hover interaction
+        const tooltip = d3.select(".tooltip");
+        node.on('mouseover', function(d) {
+            const nodeElement = d3.select(this);
+            const [x, y] = d3.mouse(document.body);
+            
+            tooltip.style('left', `${x + 15}px`)
+                   .style('top', `${y - 15}px`)
+                   .style('opacity', 1)
+                   .style('transform', 'translateY(0)');
+
+            let content = '';
+            let nodeType = '';
+            let description = '';
+            
+            if (d.isCenter) {
+                nodeType = 'Core Domain';
+                description = 'The central domain of cybersecurity with multiple branches covering different aspects of security practices and principles.';
+            } else if (d.parent === 'cybersecurity') {
+                nodeType = 'Main Category';
+                description = `A primary branch of cybersecurity focusing on ${d.label.toLowerCase()} principles and practices.`;
+            } else {
+                nodeType = 'Specific Practice';
+                description = `A specific security practice or concept within the ${d.parent} category.`;
+            }
+            
+            content = `
+                <h4>${d.label}</h4>
+                <p><strong>Type:</strong> ${nodeType}</p>
+                <p>${description}</p>
+            `;
+            
+            tooltip.html(content);
+        })
+        .on('mouseout', function() {
+            tooltip.style('opacity', 0)
+                  .style('transform', 'translateY(10px)');
+        });
+        
+        // Add a subtle pulse animation to the center node
+        node.each(function(d) {
+            if (d.isCenter) {
+                d3.select(this).select('.node-shape')
+                    .style('animation', 'pulse-center 3s infinite alternate')
+                    .style('transform-origin', 'center center');
+            }
+        });
+        
+        // Add this to the CSS section
+        const style = document.createElement('style');
+        style.textContent = `
+            @keyframes pulse-center {
+                0% { transform: scale(1); filter: drop-shadow(0 0 5px rgba(74, 144, 226, 0.6)); }
+                100% { transform: scale(1.05); filter: drop-shadow(0 0 15px rgba(74, 144, 226, 0.8)); }
+            }
+        `;
+        document.head.appendChild(style);
+
+    </script>
+</body>
+</html>
