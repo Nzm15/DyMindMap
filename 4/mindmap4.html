@@ -1,0 +1,777 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dynamic Cybersecurity Mind Map</title>
+    <script src="https://d3js.org/d3.v5.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Global Styles */
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: 'Poppins', sans-serif;
+            background-color: #121212;
+        }
+
+
+
+        /* SVG Canvas */
+        svg {
+            display: block;
+            width: 100vw;
+            height: 100vh;
+            cursor: grab;
+        }
+
+        svg:active {
+            cursor: grabbing;
+        }
+
+        /* Node Styling */
+        .node circle {
+            stroke-width: 2px;
+            cursor: pointer;
+            fill: #1F1F1F;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+        }
+
+        .node:hover circle {
+            stroke: #00B8D4;
+            stroke-width: 3px;
+            filter: drop-shadow(0 0 12px #00B8D4);
+            transform: scale(1.1);
+        }
+
+        .node text {
+            font-size: 14px;
+            fill: #EEEEEE;
+            text-anchor: middle;
+            dominant-baseline: central;
+            pointer-events: none;
+            white-space: pre-wrap;
+            word-break: break-word;
+            transition: color 0.3s ease;
+            color: #fff;
+            text-shadow: 0 0 8px rgba(255, 255, 255, 0.8);
+        }
+
+        .node:hover text {
+            fill: #00B8D4;
+            font-weight: 500;
+        }
+
+        /* Center Node (Cybersecurity) */
+        .node.center-node circle {
+            fill: #00B8D4;
+            stroke: #00B8D4;
+            animation: pulse 2.5s infinite;
+        }
+
+        .node.center-node text {
+            font-size: 22px;
+            font-weight: 600;
+            fill: #121212;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.8);
+            color: #fff;
+            text-shadow: 0 0 12px rgba(255, 255, 255, 1);
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); filter: drop-shadow(0 0 18px #00B8D4); }
+            100% { transform: scale(1); }
+        }
+
+        /* Links (Lines) */
+        .link {
+            stroke: #4A5568;
+            stroke-opacity: 0.6;
+            stroke-width: 2px;
+            fill: none;
+            transition: stroke-width 0.3s, stroke-opacity 0.3s, stroke-color 0.3s;
+        }
+
+        .link:hover {
+            stroke: #00B8D4;
+            stroke-width: 3px;
+            stroke-opacity: 0.9;
+        }
+
+        /* Zoom Controls */
+        #zoom-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            z-index: 10;
+        }
+
+        #zoom-in, #zoom-out, #toggle-fixed {
+            padding: 12px 16px;
+            border: none;
+            border-radius: 6px;
+            background-color: #2D3748;
+            cursor: pointer;
+            user-select: none;
+            font-size: 20px;
+            color: #EEEEEE;
+            transition: 0.3s ease-in-out;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        #zoom-in:hover, #zoom-out:hover, #toggle-fixed:hover {
+            background-color: #00B8D4;
+            color: #121212;
+            transform: scale(1.05);
+            box-shadow: 0 3px 7px rgba(0, 0, 0, 0.4);
+        }
+
+        #zoom-in:active, #zoom-out:active, #toggle-fixed:active {
+            background-color: #00869e;
+            transform: scale(1);
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+        }
+        
+        #toggle-fixed.active {
+            background-color: #00B8D4;
+            color: #121212;
+        }
+
+        /* Legend */
+        #legend {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(18, 18, 18, 0.8);
+            padding: 18px 24px;
+            border-radius: 8px;
+            color: #EEEEEE;
+            font-size: 14px;
+            display: flex;
+            gap: 25px;
+            z-index: 10;
+            border: 1px solid #4A5568;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+        }
+
+        #legend div {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        #legend span {
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+            border: 2px solid #121212;
+        }
+        
+          .coordinates-panel {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background-color: rgba(18, 18, 18, 0.9);
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0, 184, 212, 0.3);
+            max-height: 80vh;
+            overflow-y: auto;
+            width: 300px;
+            border: 1px solid #4A5568;
+            color: #EEEEEE;
+            z-index: 100;
+        }
+        
+        .coordinates-panel h3 {
+            margin-top: 0;
+            border-bottom: 1px solid #00B8D4;
+            padding-bottom: 5px;
+            color: #00B8D4;
+        }
+        
+        .coordinate-item {
+            margin-bottom: 5px;
+            font-family: monospace;
+            padding: 3px 5px;
+            border-radius: 3px;
+            transition: background-color 0.3s ease;
+        }
+        
+        .coordinate-item:hover {
+            background-color: rgba(0, 184, 212, 0.2);
+        }
+        
+        #toggle-coords-btn {
+            margin-top: 10px;
+            margin-left: 10px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            background-color: #2D3748;
+            color: #EEEEEE;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.3s ease-in-out;
+        }
+        
+        #toggle-coords-btn:hover {
+            background-color: #00B8D4;
+            color: #121212;
+            transform: scale(1.05);
+        }
+        /* Coordinates Display */
+        #coordinates-display {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background-color: rgba(18, 18, 18, 0.8);
+            padding: 12px 16px;
+            border-radius: 6px;
+            color: #EEEEEE;
+            font-size: 14px;
+            z-index: 100;
+            border: 1px solid #4A5568;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+            width: 300px;
+            max-height: 70vh;
+            overflow-y: auto;
+        }
+        
+        #export-btn {
+            margin-top: 10px;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            background-color: #00B8D4;
+            color: #121212;
+            cursor: pointer;
+            font-size: 12px;
+            transition: 0.3s ease-in-out;
+        }
+        
+        #export-btn:hover {
+            background-color: #00869e;
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <div id="zoom-controls">
+        <button id="zoom-in">+</button>
+        <button id="zoom-out">-</button>
+    </div>
+
+
+    <div id="coordinates-display" class="coordinates-panel" style="display: block; top: 10px; right: 20px; max-height: 70vh; overflow-y: auto; z-index: 200; width: 320px;">
+        <h3>All Node Coordinates</h3>
+        <div id="coordinate-list"></div>
+        <div style="margin-top: 10px; margin-bottom: 10px;">
+            <label style="color: #EEEEEE; margin-right: 10px;">Export format:</label>
+            <select id="export-format" style="background-color: #2D3748; color: #EEEEEE; border: 1px solid #4A5568; padding: 5px; border-radius: 4px;">
+                <option value="json">JSON</option>
+                <option value="csv">CSV</option>
+            </select>
+        </div>
+        <button id="export-btn">Export Coordinates</button>
+        <button id="toggle-coords-btn">Hide Coordinates</button>
+    </div>
+
+    <svg></svg>
+
+    <div id="legend">
+        <div><span style="background-color: #00B8D4;"></span> Core Concept</div>
+        <div><span style="background-color: #81D4FA;"></span> Key Area</div>
+        <div><span style="background-color: #FFFFFF;"></span> Subtopic</div>
+    </div>
+    <script>
+        const svg = d3.select("svg")
+            .attr("width", window.innerWidth)
+            .attr("height", window.innerHeight);
+
+        const mindMapGroup = svg.append("g").attr("transform", "translate(0,0)");
+
+        let zoomTransform = d3.zoomIdentity;
+
+        const zoom = d3.zoom()
+            .scaleExtent([0.5, 3])
+            .on("zoom", zoomed);
+
+        svg.call(zoom);
+
+        function zoomed() {
+            zoomTransform = d3.event.transform;
+            mindMapGroup.attr("transform", zoomTransform);
+        }
+
+        // Zoom Buttons
+        d3.select("#zoom-in").on("click", () => zoomSVG(0.2));
+        d3.select("#zoom-out").on("click", () => zoomSVG(-0.2));
+
+        
+
+        function zoomSVG(delta) {
+            const newScale = Math.min(3, Math.max(0.5, zoomTransform.k + delta));
+            const newTransform = d3.zoomIdentity
+                .translate(zoomTransform.x, zoomTransform.y)
+                .scale(newScale);
+        
+            svg.transition().duration(300).call(zoom.transform, newTransform);
+        }
+        
+        
+        // Toggle button remains but functionality is disabled
+        const toggleFixedBtn = d3.select("#toggle-fixed").classed("active", true);
+        
+        toggleFixedBtn.on("click", function() {
+            // Do nothing - simulation is permanently stopped
+        });
+
+        // Mind Map Data
+        const data = {
+            nodes: [
+                { id: "cybersecurity", label: "Cybersecurity", color: "#00B8D4", isCenter: true, level: 0 },
+                { id: "networkSecurity", label: "Network Security", color: "#81D4FA", parent: "cybersecurity", level: 1 },
+                { id: "firewalls", label: "Firewalls", color: "#FFFFFF", parent: "networkSecurity", level: 2 },
+                { id: "idps", label: "Intrusion Detection/Prevention Systems", color: "#FFFFFF", parent: "networkSecurity", level: 2 },
+                { id: "vpn", label: "Virtual Private Networks", color: "#FFFFFF", parent: "networkSecurity", level: 2 },
+                { id: "segmentation", label: "Network Segmentation", color: "#FFFFFF", parent: "networkSecurity", level: 2 },
+                { id: "wirelessSecurity", label: "Wireless Security", color: "#FFFFFF", parent: "networkSecurity", level: 2 },
+                { id: "endpointSecurity", label: "Endpoint Security", color: "#81D4FA", parent: "cybersecurity", level: 1 },
+                { id: "antivirus", label: "Antivirus Software", color: "#FFFFFF", parent: "endpointSecurity", level: 2 },
+                { id: "edr", label: "Endpoint Detection and Response", color: "#FFFFFF", parent: "endpointSecurity", level: 2 },
+                { id: "hostFirewalls", label: "Host-based Firewalls", color: "#FFFFFF", parent: "endpointSecurity", level: 2 },
+                { id: "deviceEncryption", label: "Device Encryption", color: "#FFFFFF", parent: "endpointSecurity", level: 2 },
+                { id: "mobileSecurity", label: "Mobile Device Security", color: "#FFFFFF", parent: "endpointSecurity", level: 2 },
+                { id: "dataProtection", label: "Data Protection", color: "#81D4FA", parent: "cybersecurity", level: 1 },
+                { id: "encryption", label: "Encryption", color: "#FFFFFF", parent: "dataProtection", level: 2 },
+                { id: "accessControl", label: "Access Control", color: "#FFFFFF", parent: "dataProtection", level: 2 },
+                { id: "dlp", label: "Data Loss Prevention", color: "#FFFFFF", parent: "dataProtection", level: 2 },
+                { id: "databaseSecurity", label: "Database Security", color: "#FFFFFF", parent: "dataProtection", level: 2 },
+                { id: "backupRecovery", label: "Backup and Recovery", color: "#FFFFFF", parent: "dataProtection", level: 2 },
+                { id: "identityAccess", label: "Identity & Access Management", color: "#81D4FA", parent: "cybersecurity", level: 1 },
+                { id: "authentication", label: "Authentication", color: "#FFFFFF", parent: "identityAccess", level: 2 },
+                { id: "authorization", label: "Authorization", color: "#FFFFFF", parent: "identityAccess", level: 2 },
+                { id: "iamPolicies", label: "IAM Policies", color: "#FFFFFF", parent: "identityAccess", level: 2 },
+                { id: "mfa", label: "Multi-Factor Authentication", color: "#FFFFFF", parent: "identityAccess", level: 2 },
+                { id: "privilegedAccess", label: "Privileged Access Management", color: "#FFFFFF", parent: "identityAccess", level: 2 },
+                { id: "threatIntelligence", label: "Threat Intelligence", color: "#81D4FA", parent: "cybersecurity", level: 1 },
+                { id: "threatSources", label: "Threat Sources", color: "#FFFFFF", parent: "threatIntelligence", level: 2 },
+                { id: "threatAnalysis", label: "Threat Analysis", color: "#FFFFFF", parent: "threatIntelligence", level: 2 },
+                { id: "informationSharing", label: "Information Sharing", color: "#FFFFFF", parent: "threatIntelligence", level: 2 },
+                { id: "vulnerabilityMgmt", label: "Vulnerability Management", color: "#81D4FA", parent: "cybersecurity", level: 1 },
+                { id: "vulnerabilityScanning", label: "Vulnerability Scanning", color: "#FFFFFF", parent: "vulnerabilityMgmt", level: 2 },
+                { id: "penetrationTesting", label: "Penetration Testing", color: "#FFFFFF", parent: "vulnerabilityMgmt", level: 2 },
+                { id: "patchManagement", label: "Patch Management", color: "#FFFFFF", parent: "vulnerabilityMgmt", level: 2 },
+            ],
+            links: [
+                { source: "cybersecurity", target: "networkSecurity" },
+                { source: "networkSecurity", target: "firewalls" },
+                { source: "networkSecurity", target: "idps" },
+                { source: "networkSecurity", target: "vpn" },
+                { source: "networkSecurity", target: "segmentation" },
+                { source: "networkSecurity", target: "wirelessSecurity" },
+                { source: "cybersecurity", target: "endpointSecurity" },
+                { source: "endpointSecurity", target: "antivirus" },
+                { source: "endpointSecurity", target: "edr" },
+                { source: "endpointSecurity", target: "hostFirewalls" },
+                { source: "endpointSecurity", target: "deviceEncryption" },
+                { source: "endpointSecurity", target: "mobileSecurity" },
+                { source: "cybersecurity", target: "dataProtection" },
+                { source: "dataProtection", target: "encryption" },
+                { source: "dataProtection", target: "accessControl" },
+                { source: "dataProtection", target: "dlp" },
+                { source: "dataProtection", target: "databaseSecurity" },
+                { source: "dataProtection", target: "backupRecovery" },
+                { source: "cybersecurity", target: "identityAccess" },
+                { source: "identityAccess", target: "authentication" },
+                { source: "identityAccess", target: "authorization" },
+                { source: "identityAccess", target: "iamPolicies" },
+                { source: "identityAccess", target: "mfa" },
+                { source: "identityAccess", target: "privilegedAccess" },
+                { source: "cybersecurity", target: "threatIntelligence" },
+                { source: "threatIntelligence", target: "threatSources" },
+                { source: "threatIntelligence", target: "threatAnalysis" },
+                { source: "threatIntelligence", target: "informationSharing" },
+                { source: "cybersecurity", target: "vulnerabilityMgmt" },
+                { source: "vulnerabilityMgmt", target: "vulnerabilityScanning" },
+                { source: "vulnerabilityMgmt", target: "penetrationTesting" },
+                { source: "vulnerabilityMgmt", target: "patchManagement" },
+            ]
+        };
+
+        // Create simulation for initial layout only
+        const simulation = d3.forceSimulation(data.nodes)
+            .force("link", d3.forceLink(data.links).id(d => d.id).distance(150))
+            .force("charge", d3.forceManyBody().strength(-500))
+            .force("center", d3.forceCenter(window.innerWidth / 2, window.innerHeight / 2));
+
+        // Set up the coordinates display panel
+        const coordinatesDisplay = d3.select("#coordinates-display");
+        const coordinateList = coordinatesDisplay.select("#coordinate-list");
+        
+        // Function to update all coordinates in the panel
+        function updateAllCoordinates() {
+            // Remove existing items
+            coordinateList.selectAll(".coordinate-item").remove();
+            
+            // Add new items with current coordinates
+            coordinateList.selectAll(".coordinate-item")
+                .data(data.nodes)
+                .enter()
+                .append("div")
+                .attr("class", "coordinate-item")
+                .attr("data-id", d => d.id)
+                .text(d => `${d.id}: [${d.x ? Math.round(d.x) : 'N/A'}, ${d.y ? Math.round(d.y) : 'N/A'}]`)
+                .style("color", d => d.color === "#FFFFFF" ? "#EEEEEE" : d.color)
+                .on("click", function(d) {
+                    // Highlight selected node in the visualization
+                    node.selectAll("circle")
+                        .attr("stroke-width", n => n.id === d.id ? 4 : 2)
+                        .attr("stroke", n => n.id === d.id ? "#00B8D4" : "#121212");
+                    
+                    // Update node info panel with details
+                    const nodeInfo = d3.select("#node-details");
+                    nodeInfo.html(`
+                        <strong>ID:</strong> ${d.id}<br>
+                        <strong>Label:</strong> ${d.label}<br>
+                        <strong>Level:</strong> ${d.level}<br>
+                        <strong>Parent:</strong> ${d.parent || 'None'}<br>
+                        <strong>Position:</strong> [${Math.round(d.x)}, ${Math.round(d.y)}]
+                    `);
+                    
+                    // Scroll to the node in the visualization
+                    const newTransform = d3.zoomIdentity
+                        .translate(window.innerWidth/2 - d.x, window.innerHeight/2 - d.y)
+                        .scale(zoomTransform.k);
+                    
+                    svg.transition().duration(500).call(zoom.transform, newTransform);
+                });
+        }
+        
+        // Toggle coordinates panel visibility
+        d3.select("#toggle-coords-btn").on("click", function() {
+            const panel = d3.select("#coordinates-display");
+            const isVisible = panel.style("display") !== "none";
+            
+            panel.style("display", isVisible ? "none" : "block");
+            this.textContent = isVisible ? "Show Coordinates" : "Hide Coordinates";
+        });
+        
+        // Initial population of coordinates
+        setTimeout(updateAllCoordinates, 500);
+        
+        // Links
+        const link = mindMapGroup.append("g")
+        .attr("class", "links")
+        .selectAll("line")
+        .data(data.links)
+        .enter().append("line")
+        .attr("class", "link");
+
+
+        // Nodes
+        const node = mindMapGroup.append("g")
+        .attr("class", "nodes")
+        .selectAll("g")
+        .data(data.nodes)
+        .enter().append("g")
+        .attr("class", d => "node" + (d.isCenter ? " center-node" : ""));
+
+        node.append("circle")
+            .attr("r", d => d.level === 0 ? 30 : d.level === 1 ? 20 : 10)
+            .attr("fill", d => d.color)
+            .attr("stroke", "#121212")
+            .attr("stroke-width", 2)
+            .attr("class", "node-circle");
+
+        node.append("text")
+            .attr("class", "node-text")
+            .text(d => d.label)
+            .style("font-size", d => d.level === 0 ? "18px" : "14px")
+            .style("fill", "#fff") // Set text color to white
+            .style("text-shadow", "0 0 8px rgba(255, 255, 255, 0.8)"); // Apply neon glow
+
+        node.filter(d => d.isCenter)
+            .classed("center-node", true);
+
+        // Function to update links when nodes are moved
+        function updateLinks() {
+            link.attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+        }
+
+        // Stop simulation after initial layout and fix all nodes
+        setTimeout(() => {
+            // Stop the simulation completely
+            simulation.stop();
+            
+            // Fix all nodes in their current positions
+            data.nodes.forEach(node => {
+                node.fx = node.x;
+                node.fy = node.y;
+            });
+            
+            // Make nodes draggable with custom drag behavior
+            node.call(d3.drag()
+                .on("start", function(d) {
+                    // No need to restart simulation
+                    // Show coordinates display when dragging starts
+                    d3.select("#coordinates-display").style("display", "block");
+                })
+                .on("drag", function(d) {
+                    // Update node position
+                    d.x = d3.event.x;
+                    d.y = d3.event.y;
+                    d.fx = d3.event.x;
+                    d.fy = d3.event.y;
+                    d3.select(this).attr("transform", `translate(${d.x},${d.y})`);
+                    updateLinks();
+                    
+                    // Update the specific coordinate item for this node
+                    coordinateList.select(`.coordinate-item[data-id="${d.id}"]`)
+                        .text(`${d.id}: [${Math.round(d.x)}, ${Math.round(d.y)}]`);
+                    
+                    // Update node info panel
+                    updateCoordinatesDisplay(d);
+                    
+                    // Highlight the moved node in the coordinates list
+                    coordinateList.selectAll(".coordinate-item")
+                        .style("background-color", n => n.id === d.id ? "rgba(0, 184, 212, 0.3)" : "transparent");
+                })
+                .on("end", function(d) {
+                }));
+                
+            // Function to update coordinates display
+            function updateCoordinatesDisplay(node) {
+                const coordsDisplay = d3.select("#node-info");
+                coordsDisplay.html(`
+                    <strong>${node.label}</strong><br>
+                    X: ${Math.round(node.x)}<br>
+                    Y: ${Math.round(node.y)}
+                `);
+            }
+            
+            // Add sorting options to the coordinates panel
+            const sortOptions = d3.select("#coordinates-display")
+                .insert("div", "#coordinate-list")
+                .attr("class", "sort-options")
+                .style("margin-bottom", "10px")
+                .style("display", "flex")
+                .style("gap", "5px");
+                
+            sortOptions.append("span")
+                .text("Sort by: ")
+                .style("color", "#EEEEEE");
+                
+            const sortButtons = [
+                { label: "ID", value: "id" },
+                { label: "Level", value: "level" },
+                { label: "X", value: "x" },
+                { label: "Y", value: "y" }
+            ];
+            
+            sortButtons.forEach(btn => {
+                sortOptions.append("button")
+                    .text(btn.label)
+                    .attr("data-sort", btn.value)
+                    .style("padding", "2px 8px")
+                    .style("border", "none")
+                    .style("border-radius", "3px")
+                    .style("background-color", "#2D3748")
+                    .style("color", "#EEEEEE")
+                    .style("cursor", "pointer")
+                    .style("font-size", "12px")
+                    .on("click", function() {
+                        sortCoordinates(btn.value);
+                        // Highlight active sort button
+                        sortOptions.selectAll("button")
+                            .style("background-color", "#2D3748");
+                        d3.select(this).style("background-color", "#00B8D4")
+                            .style("color", "#121212");
+                    });
+            });
+            
+            function sortCoordinates(sortBy) {
+                const sortedNodes = [...data.nodes].sort((a, b) => {
+                    if (sortBy === "id") return a.id.localeCompare(b.id);
+                    if (sortBy === "level") return a.level - b.level;
+                    if (sortBy === "x") return a.x - b.x;
+                    if (sortBy === "y") return a.y - b.y;
+                    return 0;
+                });
+                
+                // Update the coordinate list with sorted nodes
+                coordinateList.selectAll(".coordinate-item").remove();
+                
+                coordinateList.selectAll(".coordinate-item")
+                    .data(sortedNodes)
+                    .enter()
+                    .append("div")
+                    .attr("class", "coordinate-item")
+                    .attr("data-id", d => d.id)
+                    .text(d => `${d.id}: [${Math.round(d.x)}, ${Math.round(d.y)}]`)
+                    .style("color", d => d.color === "#FFFFFF" ? "#EEEEEE" : d.color)
+                    .on("click", function(d) {
+                        // Highlight selected node in the visualization
+                        node.selectAll("circle")
+                            .attr("stroke-width", n => n.id === d.id ? 4 : 2)
+                            .attr("stroke", n => n.id === d.id ? "#00B8D4" : "#121212");
+                        
+                        // Update node info panel with details
+                        const nodeInfo = d3.select("#node-details");
+                        nodeInfo.html(`
+                            <strong>ID:</strong> ${d.id}<br>
+                            <strong>Label:</strong> ${d.label}<br>
+                            <strong>Level:</strong> ${d.level}<br>
+                            <strong>Parent:</strong> ${d.parent || 'None'}<br>
+                            <strong>Position:</strong> [${Math.round(d.x)}, ${Math.round(d.y)}]
+                        `);
+                        
+                        // Scroll to the node in the visualization
+                        const newTransform = d3.zoomIdentity
+                            .translate(window.innerWidth/2 - d.x, window.innerHeight/2 - d.y)
+                            .scale(zoomTransform.k);
+                        
+                        svg.transition().duration(500).call(zoom.transform, newTransform);
+                    });
+            }
+            
+            // Export coordinates functionality
+            d3.select("#export-btn").on("click", exportCoordinates);
+            
+            function exportCoordinates() {
+                // Create a more comprehensive data structure with all node properties
+                const coordsData = data.nodes.map(node => ({
+                    id: node.id,
+                    label: node.label,
+                    level: node.level,
+                    color: node.color,
+                    parent: node.parent,
+                    isCenter: node.isCenter || false,
+                    x: Math.round(node.x),
+                    y: Math.round(node.y)
+                }));
+                
+                // Get the selected export format
+                const formatSelect = document.getElementById("export-format");
+                const format = formatSelect.value;
+                
+                // Create a timestamp for the filename
+                const timestamp = new Date().toISOString().replace(/[:.]/g, '-').substring(0, 19);
+                let filename, fileContent, contentType;
+                
+                if (format === "csv") {
+                    filename = `cybersecurity_mindmap_coordinates_${timestamp}.csv`;
+                    // Create CSV header
+                    let csvContent = "id,label,level,parent,x,y,color\n";
+                    // Add data rows
+                    coordsData.forEach(node => {
+                        csvContent += `"${node.id}","${node.label}",${node.level},"${node.parent || ''}",${node.x},${node.y},"${node.color}"\n`;
+                    });
+                    fileContent = csvContent;
+                    contentType = "text/csv";
+                } else {
+                    filename = `cybersecurity_mindmap_coordinates_${timestamp}.json`;
+                    fileContent = JSON.stringify(coordsData, null, 2);
+                    contentType = "application/json";
+                }
+                
+                // Create and download the file
+                const blob = new Blob([fileContent], {type: contentType});
+                const url = URL.createObjectURL(blob);
+                
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // Show confirmation message
+                alert(`Coordinates exported successfully as ${filename}`);
+            }
+        }, 2000); // Allow 2 seconds for initial layout
+
+        // Hide loading screen after map is ready
+        setTimeout(() => {
+            document.getElementById("loading-screen").classList.add("hidden");
+        }, 1000);
+
+        node.on("click", function(d) {
+            // Update node info panel with comprehensive details
+            d3.select("#node-details").html(
+              `<strong>ID:</strong> ${d.id}<br>
+               <strong>Label:</strong> ${d.label}<br>
+               <strong>Level:</strong> ${d.level ?? 'N/A'}<br>
+               <strong>Parent:</strong> ${d.parent || 'None'}<br>
+               <strong>X:</strong> ${Math.round(d.x)}<br>
+               <strong>Y:</strong> ${Math.round(d.y)}<br>
+               <strong>Color:</strong> <span style="display:inline-block; width:15px; height:15px; background-color:${d.color}; border-radius:50%; vertical-align:middle;"></span> ${d.color}`
+            );
+            
+            // Highlight the selected node in the visualization
+            node.selectAll("circle")
+                .attr("stroke-width", n => n.id === d.id ? 4 : 2)
+                .attr("stroke", n => n.id === d.id ? "#00B8D4" : "#121212");
+                
+            // Highlight the node in the coordinates list
+            coordinateList.selectAll(".coordinate-item")
+                .style("background-color", n => n.id === d.id ? "rgba(0, 184, 212, 0.3)" : "transparent");
+          });
+
+
+        // Run simulation once for initial layout
+        simulation.on("tick", () => {
+            link
+                .attr("x1", d => d.source.x)
+                .attr("y1", d => d.source.y)
+                .attr("x2", d => d.target.x)
+                .attr("y2", d => d.target.y);
+    
+            node
+                .attr("transform", d => `translate(${d.x},${d.y})`);
+    
+            // Update the coordinates display on each tick
+            updateAllCoordinates();
+        });
+        
+        // Add search functionality to the coordinates panel
+        const searchBox = d3.select("#coordinates-display")
+            .insert("input", ":first-child")
+            .attr("type", "text")
+            .attr("placeholder", "Search nodes...")
+            .attr("id", "search-nodes")
+            .style("width", "100%")
+            .style("margin-bottom", "10px")
+            .style("padding", "5px")
+            .style("border", "1px solid #4A5568")
+            .style("border-radius", "4px")
+            .style("background-color", "#1F1F1F")
+            .style("color", "#EEEEEE");
+            
+        searchBox.on("input", function() {
+            const searchTerm = this.value.toLowerCase();
+            
+            coordinateList.selectAll(".coordinate-item")
+                .style("display", d => {
+                    const matchesId = d.id.toLowerCase().includes(searchTerm);
+                    const matchesLabel = d.label.toLowerCase().includes(searchTerm);
+                    return (matchesId || matchesLabel) ? "block" : "none";
+                });
+        });
+
+    </script>
+</body>
+</html>
