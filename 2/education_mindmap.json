@@ -1,0 +1,296 @@
+{
+    "nodes": [
+        {
+        "id": "education",
+        "label": "Education",
+        "level": 0,
+        "color": "#00B8D4",
+        "isCenter": true,
+        "x": 757,
+        "y": 373
+        },
+        {
+        "id": "mathematics",
+        "label": "Mathematics",
+        "level": 1,
+        "color": "#81D4FA",
+        "parent": "education",
+        "isCenter": false,
+        "x": 409,
+        "y": 505
+        },
+        {
+        "id": "algebra",
+        "label": "Algebra",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "mathematics",
+        "isCenter": false,
+        "x": 242,
+        "y": 460
+        },
+        {
+        "id": "geometry",
+        "label": "Geometry",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "mathematics",
+        "isCenter": false,
+        "x": 358,
+        "y": 667
+        },
+        {
+        "id": "calculus",
+        "label": "Calculus",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "mathematics",
+        "isCenter": false,
+        "x": 239,
+        "y": 545
+        },
+        {
+        "id": "science",
+        "label": "Science",
+        "level": 1,
+        "color": "#81D4FA",
+        "parent": "education",
+        "isCenter": false,
+        "x": 684,
+        "y": -11
+        },
+        {
+        "id": "physics",
+        "label": "Physics",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "science",
+        "isCenter": false,
+        "x": 759,
+        "y": -170
+        },
+        {
+        "id": "chemistry",
+        "label": "Chemistry",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "science",
+        "isCenter": false,
+        "x": 545,
+        "y": -116
+        },
+        {
+        "id": "biology",
+        "label": "Biology",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "science",
+        "isCenter": false,
+        "x": 679,
+        "y": -189
+        },
+        {
+        "id": "languages",
+        "label": "Languages",
+        "level": 1,
+        "color": "#81D4FA",
+        "parent": "education",
+        "isCenter": false,
+        "x": 1096,
+        "y": 192
+        },
+        {
+        "id": "english",
+        "label": "English",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "languages",
+        "isCenter": false,
+        "x": 1254,
+        "y": 261
+        },
+        {
+        "id": "spanish",
+        "label": "Spanish",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "languages",
+        "isCenter": false,
+        "x": 1202,
+        "y": 52
+        },
+        {
+        "id": "french",
+        "label": "French",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "languages",
+        "isCenter": false,
+        "x": 1272,
+        "y": 180
+        },
+        {
+        "id": "arts",
+        "label": "Arts",
+        "level": 1,
+        "color": "#81D4FA",
+        "parent": "education",
+        "isCenter": false,
+        "x": 764,
+        "y": 782
+        },
+        {
+        "id": "visualArts",
+        "label": "Visual Arts",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "arts",
+        "isCenter": false,
+        "x": 662,
+        "y": 925
+        },
+        {
+        "id": "music",
+        "label": "Music",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "arts",
+        "isCenter": false,
+        "x": 875,
+        "y": 917
+        },
+        {
+        "id": "drama",
+        "label": "Drama",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "arts",
+        "isCenter": false,
+        "x": 730,
+        "y": 957
+        },
+        {
+        "id": "socialStudies",
+        "label": "Social Studies",
+        "level": 1,
+        "color": "#81D4FA",
+        "parent": "education",
+        "isCenter": false,
+        "x": 530,
+        "y": 233
+        },
+        {
+        "id": "history",
+        "label": "History",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "socialStudies",
+        "isCenter": false,
+        "x": 442,
+        "y": 86
+        },
+        {
+        "id": "geography",
+        "label": "Geography",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "socialStudies",
+        "isCenter": false,
+        "x": 357,
+        "y": 224
+        },
+        {
+        "id": "civics",
+        "label": "Civics",
+        "level": 2,
+        "color": "#FFFFFF",
+        "parent": "socialStudies",
+        "isCenter": false,
+        "x": 378,
+        "y": 142
+        }
+    ],
+    "links": [
+        {
+        "source": "education",
+        "target": "mathematics"
+        },
+        {
+        "source": "mathematics",
+        "target": "algebra"
+        },
+        {
+        "source": "mathematics",
+        "target": "geometry"
+        },
+        {
+        "source": "mathematics",
+        "target": "calculus"
+        },
+        {
+        "source": "education",
+        "target": "science"
+        },
+        {
+        "source": "science",
+        "target": "physics"
+        },
+        {
+        "source": "science",
+        "target": "chemistry"
+        },
+        {
+        "source": "science",
+        "target": "biology"
+        },
+        {
+        "source": "education",
+        "target": "languages"
+        },
+        {
+        "source": "languages",
+        "target": "english"
+        },
+        {
+        "source": "languages",
+        "target": "spanish"
+        },
+        {
+        "source": "languages",
+        "target": "french"
+        },
+        {
+        "source": "education",
+        "target": "arts"
+        },
+        {
+        "source": "arts",
+        "target": "visualArts"
+        },
+        {
+        "source": "arts",
+        "target": "music"
+        },
+        {
+        "source": "arts",
+        "target": "drama"
+        },
+        {
+        "source": "education",
+        "target": "socialStudies"
+        },
+        {
+            "source": "socialStudies",
+            "target": "history"
+        },
+        {
+            "source": "socialStudies",
+            "target": "geography"
+        },
+        {
+            "source": "socialStudies",
+            "target": "civics"
+        }
+    ]
+}
+  
